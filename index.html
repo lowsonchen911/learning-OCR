@@ -3,118 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gemini 模型診斷器</title>
+    <title>小三英文 AI 助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #f3f4f6; }
-        .log-entry { font-family: monospace; font-size: 10px; margin-bottom: 2px; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: #f8fafc; }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="p-4">
+<body class="p-4 pb-20">
 
     <div class="max-w-md mx-auto space-y-4">
-        <header class="text-center py-4">
-            <h1 class="text-xl font-black text-indigo-700">Gemini 權限診斷工具</h1>
-            <p class="text-[10px] text-gray-400">VERSION 2026.04.24-RECOVERY</p>
+        <header class="text-center py-2">
+            <h1 class="text-xl font-black text-indigo-600 italic">小三英文 AI 助手</h1>
+            <p class="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Version: 2026.04.24-23 (Auto-Model Recovery)</p>
         </header>
 
-        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
-            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">第一步：輸入 API Key</label>
-            <input type="password" id="apiKey" class="w-full p-3 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 mb-3 text-sm" placeholder="AIza...">
-            <button onclick="fetchAvailableModels()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all">獲取可用模型清單</button>
+        <div id="setupArea" class="bg-white p-6 rounded-[2rem] shadow-xl border border-white">
+            <label class="block text-xs font-bold text-gray-400 mb-2">請貼入全新的 API KEY</label>
+            <input type="password" id="apiKeyIn" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-500 mb-4 text-sm" placeholder="AIza...">
+            <button onclick="initApp()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all">儲存金鑰並掃描權限</button>
+            <p class="text-[10px] text-red-500 mt-2 text-center">請務必使用從 AI Studio 新申請的 Key</p>
         </div>
 
-        <div id="step2" class="hidden bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
-            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">第二步：選擇可用模型</label>
-            <select id="modelPicker" class="w-full p-3 bg-indigo-50 text-indigo-700 rounded-xl outline-none border border-indigo-100 font-bold mb-4"></select>
-            
-            <input type="file" id="fileIn" accept="image/*" class="hidden" onchange="runOcr(event)">
-            <button onclick="document.getElementById('fileIn').click()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all">
-                <i class="fas fa-camera mr-2"></i> 開始拍照辨識
-            </button>
-        </div>
+        <div id="mainUI" class="hidden space-y-4">
+            <div class="bg-white p-6 rounded-[2rem] shadow-xl text-center relative overflow-hidden">
+                <div id="modelStatus" class="text-[10px] bg-indigo-50 text-indigo-600 py-1 px-3 rounded-full inline-block font-bold mb-4 uppercase">自動選取模型中...</div>
+                
+                <input type="file" id="fileIn" accept="image/*" class="hidden" onchange="runOCR(event)">
+                <button id="scanBtn" onclick="document.getElementById('fileIn').click()" class="w-full bg-indigo-600 text-white py-8 rounded-[1.5rem] font-bold shadow-lg active:scale-95 transition-all">
+                    <i class="fas fa-camera text-2xl mb-2"></i><br>拍照辨識單字
+                </button>
 
-        <div class="bg-slate-900 rounded-3xl p-5 shadow-2xl h-80 flex flex-col">
-            <h3 class="text-indigo-400 text-[10px] font-bold mb-2 flex justify-between">
-                <span>系統診斷日誌</span>
-                <button onclick="document.getElementById('log').innerHTML=''" class="text-slate-500">清空</button>
-            </h3>
-            <div id="log" class="flex-1 overflow-y-auto text-green-400 font-mono text-[10px]">
-                [SYSTEM] 等待金鑰輸入...
+                <div id="loader" class="hidden py-8">
+                    <i class="fas fa-circle-notch spin text-indigo-500 text-3xl mb-2"></i>
+                    <p class="text-indigo-600 font-bold animate-pulse text-sm">正在辨識中，請稍候...</p>
+                </div>
+                
+                <button onclick="resetKey()" class="text-[10px] text-gray-300 mt-6 underline">重設 API Key</button>
             </div>
+
+            <div id="listArea" class="space-y-2"></div>
+        </div>
+
+        <div class="bg-slate-900 rounded-2xl p-4 h-48 overflow-y-auto font-mono text-[9px] text-green-400" id="log">
+            [SYSTEM] 等待初始化...
         </div>
     </div>
 
     <script>
-        const sysLog = (msg, color = 'text-green-400') => {
+        let db = JSON.parse(localStorage.getItem('study_v23_db') || '[]');
+        let activeModel = "";
+
+        const log = (msg, isErr = false) => {
             const div = document.getElementById('log');
-            const el = document.createElement('div');
-            el.className = `log-entry ${color}`;
-            el.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            div.appendChild(el);
+            const entry = document.createElement('div');
+            entry.className = isErr ? 'text-red-400' : 'text-green-400';
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            div.appendChild(entry);
             div.scrollTop = div.scrollHeight;
         };
 
-        // 1. 抓取該 API Key 真正擁有的模型
-        async function fetchAvailableModels() {
-            const key = document.getElementById('apiKey').value.trim();
-            if(!key) return alert("請輸入金鑰！");
-            
-            sysLog("正在向 Google 查詢權限清單...");
+        window.onload = () => {
+            if(localStorage.getItem('user_key_v23')) {
+                initApp();
+            }
+            renderList();
+        };
+
+        async function initApp() {
+            const key = document.getElementById('apiKeyIn').value.trim() || localStorage.getItem('user_key_v23');
+            if(!key) return;
+
+            log("正在連線 Google 獲取可用模型清單...");
             try {
-                // 嘗試 v1beta 的 ListModels 介面
+                // 優先嘗試 v1beta
                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
                 const data = await resp.json();
 
                 if(data.error) throw new Error(data.error.message);
 
-                const picker = document.getElementById('modelPicker');
-                picker.innerHTML = "";
-                
-                // 過濾出支援辨識的模型 (支援 generateContent 的)
-                const validModels = data.models.filter(m => m.supportedGenerationMethods.includes('generateContent'));
-                
-                validModels.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m.name; // 名稱格式通常是 models/gemini-1.5-flash
-                    opt.innerText = m.displayName;
-                    picker.appendChild(opt);
-                });
+                // 自動挑選 1.5 Flash 或 2.0 Flash
+                const flashModels = data.models.filter(m => m.name.includes('flash'));
+                if(flashModels.length > 0) {
+                    // 優先順序：1.5-flash > 2.0-flash (因為 1.5 目前配額最穩)
+                    const target = flashModels.find(m => m.name.includes('1.5-flash')) || flashModels[0];
+                    activeModel = target.name;
+                    document.getElementById('modelStatus').innerText = `已對接：${target.displayName}`;
+                    log(`選用模型: ${activeModel}`);
+                }
 
-                document.getElementById('step2').classList.remove('hidden');
-                sysLog(`成功！找到 ${validModels.length} 個可用模型。`, 'text-yellow-400');
-                sysLog("請在第二步選擇模型後開始辨識。");
+                localStorage.setItem('user_key_v23', key);
+                document.getElementById('setupArea').classList.add('hidden');
+                document.getElementById('mainUI').classList.remove('hidden');
+                log("初始化成功，系統就緒。");
 
             } catch(e) {
-                sysLog("獲取清單失敗：" + e.message, 'text-red-400');
+                log("初始化失敗：" + e.message, true);
+                if(e.message.includes("leaked")) alert("警告：你的 API Key 已失效(leaked)，請去 AI Studio 申請一個全新的！");
             }
         }
 
-        // 2. 執行辨識
-        async function runOcr(e) {
+        async function runOCR(e) {
             const file = e.target.files[0];
-            if(!file) return;
+            if(!file || !activeModel) return;
 
-            const key = document.getElementById('apiKey').value.trim();
-            const modelName = document.getElementById('modelPicker').value;
+            const btn = document.getElementById('scanBtn');
+            const loader = document.getElementById('loader');
+            btn.classList.add('hidden');
+            loader.classList.remove('hidden');
 
-            sysLog(`啟動辨識：使用模型 ${modelName}`);
-            
             try {
-                // 自動縮圖至 800px (極效防爆 429)
                 const base64 = await compress(file, 800);
-                sysLog("圖片已縮壓，正在傳送...");
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${key}`;
+                const key = localStorage.getItem('user_key_v23');
                 
+                // 使用 v1beta 搭配自動偵測到的模型名稱
+                const url = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${key}`;
+                
+                log(`發送請求至 ${activeModel}...`);
                 const resp = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{ text: "辨識英文考卷單字與翻譯。格式：英文 | 翻譯" },
+                            parts: [{ text: "辨識英文考卷單字與翻譯。輸出：英文 | 翻譯" },
                                    { inline_data: { mime_type: "image/jpeg", data: base64.split(',')[1] } }]
                         }]
                     })
@@ -123,16 +137,49 @@
                 const result = await resp.json();
                 if(result.error) throw new Error(result.error.message);
 
-                const text = result.candidates[0].content.parts[0].text;
-                sysLog("--- 辨識結果 ---", "text-white");
-                sysLog(text, "text-white");
-                alert("辨識成功！結果已顯示在日誌中。");
+                const aiText = result.candidates[0].content.parts[0].text;
+                log("辨識成功！正在加入題庫...");
+                processText(aiText);
 
             } catch(err) {
-                sysLog("!! 錯誤：" + err.message, 'text-red-400');
+                log("!! 錯誤：" + err.message, true);
+                alert("辨識失敗：" + err.message);
             } finally {
+                btn.classList.remove('hidden');
+                loader.classList.add('hidden');
                 e.target.value = '';
             }
+        }
+
+        function processText(text) {
+            text.split('\n').forEach(line => {
+                if(line.includes('|')) {
+                    let [word, trans] = line.split('|').map(s => s.trim());
+                    if(word && trans) db.push({ id: Date.now()+Math.random(), word, trans });
+                }
+            });
+            localStorage.setItem('study_v23_db', JSON.stringify(db));
+            renderList();
+        }
+
+        function renderList() {
+            const container = document.getElementById('listArea');
+            container.innerHTML = db.slice().reverse().map(item => `
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border-l-4 border-indigo-500">
+                    <div>
+                        <div class="font-bold text-indigo-900">${item.word}</div>
+                        <div class="text-[10px] text-gray-400">${item.trans}</div>
+                    </div>
+                    <button onclick="speak('${item.word}')" class="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center active:scale-90"><i class="fas fa-volume-up"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function speak(t) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(t);
+            u.lang = 'en-US';
+            window.speechSynthesis.speak(u);
         }
 
         function compress(file, maxWidth) {
@@ -153,6 +200,11 @@
                     };
                 };
             });
+        }
+
+        function resetKey() {
+            localStorage.clear();
+            location.reload();
         }
     </script>
 </body>
