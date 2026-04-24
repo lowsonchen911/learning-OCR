@@ -11,10 +11,8 @@
         body { font-family: 'Noto Sans TC', sans-serif; background: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .correct-flash { animation: flash 0.6s ease; }
-        @keyframes flash { 0% { background: white; } 50% { background: #dcfce7; } 100% { background: white; } }
         input { text-transform: lowercase !important; }
-        .option-btn { transition: all 0.1s; text-align: left; }
+        .option-btn { transition: all 0.1s; text-align: left; border: 2px solid transparent; }
         .option-btn:active { background: #4f46e5 !important; color: white !important; }
         .nav-active { color: #4338ca !important; }
         .nav-active i { transform: translateY(-3px); }
@@ -28,7 +26,7 @@
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
                 <h1 class="text-2xl font-black italic flex items-center"><i class="fas fa-brain mr-2 text-yellow-300"></i>AI 聽考系統</h1>
-                <p id="versionTag" class="text-[9px] text-indigo-200 font-bold uppercase tracking-widest">Version: 2026.04.24-Admin-Pro-V2</p>
+                <p id="versionTag" class="text-[9px] text-indigo-200 font-bold uppercase tracking-widest">Version: 2026.04.24-Admin-Pro-V3</p>
             </div>
             <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full active:scale-90 transition-all"><i class="fas fa-cog text-xl text-yellow-300"></i></button>
         </div>
@@ -37,7 +35,7 @@
     <main class="p-4 max-w-2xl mx-auto">
         <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
             <h3 class="font-bold mb-4 flex items-center text-indigo-300">系統設定</h3>
-            <input type="password" id="apiKeyInput" placeholder="在此輸入 API Key (AIza...)" class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mb-4 outline-none text-white focus:ring-2 focus:ring-indigo-500">
+            <input type="password" id="apiKeyInput" placeholder="在此輸入 API Key" class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mb-4 outline-none text-white focus:ring-2 focus:ring-indigo-500">
             <div class="grid grid-cols-2 gap-2">
                 <button onclick="window.saveSettings()" class="col-span-2 bg-indigo-500 py-3 rounded-xl font-bold">儲存設置</button>
                 <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs">導出備份</button>
@@ -50,32 +48,27 @@
                 <div id="idleUI">
                     <div class="flex gap-2 mb-4">
                         <select id="gradeSelect" class="flex-1 bg-indigo-50 text-indigo-700 font-bold py-3 px-4 rounded-xl outline-none">
-                            <option value="G1">一年級</option><option value="G2">二年級</option>
-                            <option value="G3" selected>三年級</option><option value="G4">四年級</option>
-                            <option value="G5">五年級</option><option value="G6">六年級</option>
+                            <option value="G3" selected>三年級</option><option value="G4">四年級</option><option value="G5">五年級</option>
                         </select>
                         <div id="modelBadge" class="bg-slate-100 text-slate-400 text-[9px] flex items-center px-3 rounded-xl font-bold uppercase">Ready</div>
                     </div>
                     <div class="mb-4 flex gap-2">
                         <input type="text" id="manualInput" placeholder="手動輸入單字" class="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-400">
-                        <button onclick="window.handleManual()" class="bg-indigo-600 text-white px-5 rounded-xl font-bold"><i class="fas fa-plus"></i></button>
+                        <button onclick="window.handleManual()" class="bg-indigo-600 text-white px-5 rounded-xl font-bold active:scale-90"><i class="fas fa-plus"></i></button>
                     </div>
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
                     <button onclick="window.checkBeforeUpload()" id="scanBtn" class="w-full bg-indigo-100 text-indigo-700 py-4 rounded-2xl font-bold shadow-sm active:scale-95 transition-all">
                         <i class="fas fa-camera mr-2"></i> 拍照自動辨識匯入
                     </button>
                 </div>
-                
                 <div id="loadingUI" class="hidden py-10 text-center">
                     <i class="fas fa-circle-notch spin text-4xl text-indigo-600 mb-4 inline-block"></i>
                     <p class="text-indigo-600 font-bold animate-pulse">AI 正在努力辨識，請稍候...</p>
                 </div>
             </div>
-
             <button onclick="window.cleanDuplicates()" class="w-full bg-yellow-50 text-yellow-700 py-3 rounded-2xl font-bold text-xs border border-yellow-100 shadow-sm active:scale-95 transition-all">
                 <i class="fas fa-broom mr-2"></i> 清理重複單字 (保留最早紀錄)
             </button>
-
             <div id="itemList" class="space-y-3 pb-10"></div>
         </section>
 
@@ -104,21 +97,15 @@
                         <tbody id="resultSummary"></tbody>
                     </table>
                 </div>
-                <button onclick="window.switchTab('history')" class="w-full mt-8 bg-indigo-700 text-white py-5 rounded-[1.5rem] font-black shadow-lg">返回歷史紀錄</button>
+                <button onclick="window.switchTab('history')" class="w-full mt-8 bg-indigo-700 text-white py-5 rounded-[1.5rem] font-black shadow-lg">返回紀錄列表</button>
             </div>
         </section>
     </main>
 
     <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t flex justify-around p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40 rounded-t-[2rem]">
-        <button onclick="window.switchTab('list')" id="nav-list" class="flex flex-col items-center text-slate-300">
-            <i class="fas fa-layer-group text-xl"></i><span class="text-[10px] mt-1 font-bold">題庫</span>
-        </button>
-        <button onclick="window.startExam()" id="nav-quiz" class="flex flex-col items-center text-slate-300">
-            <i class="fas fa-play-circle text-2xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span>
-        </button>
-        <button onclick="window.switchTab('history')" id="nav-history" class="flex flex-col items-center text-slate-300">
-            <i class="fas fa-history text-xl"></i><span class="text-[10px] mt-1 font-bold">紀錄</span>
-        </button>
+        <button onclick="window.switchTab('list')" id="nav-list" class="flex flex-col items-center text-slate-300 transition-all"><i class="fas fa-layer-group text-xl"></i><span class="text-[10px] mt-1 font-bold">題庫</span></button>
+        <button onclick="window.startExam()" id="nav-quiz" class="flex flex-col items-center text-slate-300 transition-all"><i class="fas fa-play-circle text-2xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span></button>
+        <button onclick="window.switchTab('history')" id="nav-history" class="flex flex-col items-center text-slate-300 transition-all"><i class="fas fa-history text-xl"></i><span class="text-[10px] mt-1 font-bold">紀錄</span></button>
     </nav>
 
     <script type="module">
@@ -150,7 +137,7 @@
 
         window.saveSettings = () => { localStorage.setItem('vAdmin_key', document.getElementById('apiKeyInput').value.trim()); location.reload(); };
 
-        // --- 核心辨識邏輯 ---
+        // --- 維持 AI 辨識原始碼 ---
         function parseAndIngest(text, grade) {
             let count = 0;
             text.split('\n').forEach(line => {
@@ -172,12 +159,9 @@
         window.cleanDuplicates = () => {
             const before = db.length;
             const seen = new Set();
-            db = db.filter(item => {
-                const k = item.word.toLowerCase().trim();
-                return seen.has(k) ? false : seen.add(k);
-            });
+            db = db.filter(item => { const k = item.word.toLowerCase().trim(); return seen.has(k) ? false : seen.add(k); });
             saveDB();
-            alert(`整理完畢！已清理 ${before - db.length} 筆重複項。`);
+            alert(`清理完畢！`);
         };
 
         window.handleManual = async () => {
@@ -186,10 +170,10 @@
             toggleLoader(true);
             try {
                 const aiRes = await callGemini(`OCR: "${word}". Word | Translation | Simple Sentence.`, localStorage.getItem('vAdmin_key'));
-                const added = parseAndIngest(aiRes, gradeSelect.value);
+                parseAndIngest(aiRes, gradeSelect.value);
                 document.getElementById('manualInput').value = "";
-                alert(`手動加入成功！`);
-            } catch (e) { alert("連線繁忙"); }
+                alert(`加入成功！`);
+            } catch (e) { alert("失敗"); }
             finally { toggleLoader(false); }
         };
 
@@ -205,7 +189,7 @@
                 const aiRes = await callGemini(p, localStorage.getItem('vAdmin_key'), b64);
                 const n = parseAndIngest(aiRes, gradeSelect.value);
                 alert(`入庫成功！共新增 ${n} 筆單字。`);
-            } catch (err) { alert("Error 429/503: 伺服器忙碌。"); }
+            } catch (err) { alert("Error 429/503"); }
             finally { toggleLoader(false); e.target.value = ''; }
         };
 
@@ -224,7 +208,7 @@
             document.getElementById('itemList').innerHTML = db.slice().reverse().map(item => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2 border border-slate-100">
                     <div onclick="window.speak('${item.word}')" class="flex-1 cursor-pointer">
-                        <div class="font-bold text-indigo-900">${item.word} <span class="text-[9px] bg-slate-50 text-indigo-400 px-2 py-1 rounded ml-2">${item.grade}</span></div>
+                        <div class="font-bold text-indigo-900">${item.word}</div>
                         <div class="text-[10px] text-slate-400">${item.trans}</div>
                     </div>
                     <button onclick="window.deleteItem(${item.id})" class="text-slate-200 p-2"><i class="fas fa-trash-alt"></i></button>
@@ -234,14 +218,14 @@
             document.getElementById('historyList').innerHTML = history.slice().reverse().map((h, i) => `
                 <div onclick="window.viewReport(${history.length - 1 - i})" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center active:scale-95 transition-all">
                     <div><div class="text-[10px] font-mono text-slate-400">${h.code}</div><div class="font-black text-indigo-900 text-lg">${h.score} 分</div></div>
-                    <div class="text-right text-[10px] font-bold text-indigo-500">${h.date.split(' ')[0]}<br>點擊看詳情 <i class="fas fa-chevron-right ml-1"></i></div>
+                    <div class="text-right text-[10px] font-bold text-indigo-500">${h.date.split(' ')[0]}<br>點擊詳情 <i class="fas fa-chevron-right ml-1"></i></div>
                 </div>
             `).join('');
         }
 
         window.deleteItem = (id) => { if(confirm("刪除？")) { db = db.filter(i => i.id !== id); saveDB(); } };
 
-        // --- 聽考系統核心 ---
+        // --- 聽考系統核心修正 ---
         window.startExam = () => {
             if (db.length < 5) return alert("單字量不足。");
             let shuffled = [...db].sort(() => 0.5 - Math.random());
@@ -259,18 +243,25 @@
             const isVocab = currentIdx < 5;
             const isChoice = currentIdx >= 5 && currentIdx < 10;
 
+            // 修復挖空邏輯：使用 case-insensitive 且不依賴邊界 \b 的替換
+            let displaySentence = item.sentence;
+            try {
+                const regex = new RegExp(item.word, 'gi');
+                displaySentence = item.sentence.replace(regex, '______');
+            } catch(e) { displaySentence = item.sentence.replace(item.word, '______'); }
+
             let bodyHtml = "";
             if (isVocab) {
-                bodyHtml = `<div class="flex-1 flex flex-col justify-center"><button onclick="window.speak('${item.word}')" class="w-32 h-32 bg-indigo-600 text-white rounded-full mx-auto mb-8 shadow-2xl"><i class="fas fa-volume-up text-4xl"></i></button><div class="text-slate-300 text-xs font-bold uppercase">Listen and Spell</div></div>`;
+                bodyHtml = `<div class="flex-1 flex flex-col justify-center"><button onclick="window.speak('${item.word}')" class="w-32 h-32 bg-indigo-600 text-white rounded-full mx-auto mb-8 shadow-2xl"><i class="fas fa-volume-up text-4xl"></i></button><div class="text-slate-300 text-xs font-bold uppercase tracking-widest italic">Listen and Spell</div></div>`;
             } else if (isChoice) {
                 if (!examOptionsState[currentIdx]) { examOptionsState[currentIdx] = generateQuizOptions(item.word); }
                 const opts = examOptionsState[currentIdx];
-                bodyHtml = `<div class="flex-1 flex flex-col justify-center px-4"><div class="text-indigo-900 font-bold text-2xl mb-10 leading-relaxed">${item.sentence.replace(new RegExp('\\b'+item.word+'\\b','gi'),'____')}</div><div class="grid grid-cols-1 gap-3">${opts.map((o, i) => { const isSel = examUserAnswers[currentIdx] === o.toLowerCase(); return `<button onclick="window.handleChoice('${o}')" class="option-btn ${isSel ? 'bg-indigo-600 text-white' : 'bg-slate-50'} py-5 rounded-2xl font-black text-lg shadow-sm px-6"><span class="${isSel ? 'text-indigo-200' : 'text-indigo-400'} mr-2">${i+1}.</span> ${o}</button>`; }).join('')}</div></div>`;
+                bodyHtml = `<div class="flex-1 flex flex-col justify-center px-4"><div class="text-indigo-900 font-bold text-2xl mb-10 leading-relaxed">${displaySentence}</div><div class="grid grid-cols-1 gap-3">${opts.map((o, i) => { const isSel = examUserAnswers[currentIdx] === o.toLowerCase(); return `<button onclick="window.handleChoice('${o}')" class="option-btn ${isSel ? 'bg-indigo-600 text-white' : 'bg-slate-50'} py-5 rounded-2xl font-black text-lg shadow-sm px-6"><span class="${isSel ? 'text-indigo-200' : 'text-indigo-400'} mr-2">${i+1}.</span> ${o}</button>`; }).join('')}</div></div>`;
             } else {
-                bodyHtml = `<div class="flex-1 flex flex-col justify-center"><button onclick="window.speak('${item.sentence}')" class="w-24 h-24 bg-slate-800 text-white rounded-full mx-auto mb-6 shadow-xl"><i class="fas fa-volume-up text-3xl"></i></button><div class="text-indigo-900 font-bold text-2xl leading-relaxed mb-6 px-4 font-serif">${item.sentence.replace(new RegExp('\\b'+item.word+'\\b','gi'),'______')}</div><div class="text-slate-300 text-xs font-bold uppercase">Listen and Fill</div></div>`;
+                bodyHtml = `<div class="flex-1 flex flex-col justify-center"><button onclick="window.speak('${item.sentence}')" class="w-24 h-24 bg-slate-800 text-white rounded-full mx-auto mb-6 shadow-xl active:scale-95"><i class="fas fa-volume-up text-3xl"></i></button><div class="text-indigo-900 font-bold text-2xl leading-relaxed mb-6 px-4 font-serif">${displaySentence}</div><div class="text-slate-300 text-xs font-bold uppercase tracking-tighter italic">Listen and Fill</div></div>`;
             }
 
-            card.innerHTML = `<div class="flex justify-between items-center mb-6"><span class="text-slate-300 text-[10px] font-black tracking-[0.2em]">QUESTION ${currentIdx + 1} / ${currentExamItems.length}</span><button onclick="window.speak('${isVocab ? item.word : item.sentence}')" class="text-indigo-500 font-bold text-[10px] bg-indigo-50 px-4 py-2 rounded-full"><i class="fas fa-redo-alt mr-1"></i>重聽</button></div>${bodyHtml}<div class="${isChoice ? 'hidden' : 'mt-8'}"><input type="text" id="examInput" onkeydown="handleKeydown(event)" value="${examUserAnswers[currentIdx]}" class="w-full border-b-4 border-indigo-100 text-4xl text-center p-2 mb-4 outline-none focus:border-indigo-500 font-black" placeholder="..." autocomplete="off"></div><div class="flex justify-between mt-8 pt-4 border-t border-slate-50"><button onclick="window.movePrev()" class="text-indigo-400 text-xs font-bold p-2 ${currentIdx === 0 ? 'invisible' : ''}"><i class="fas fa-chevron-left mr-1"></i>前一題</button>${currentIdx === currentExamItems.length - 1 ? `<button onclick="window.finalizeExam()" class="bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg">提交</button>` : `<button onclick="window.moveNext()" class="text-indigo-400 text-xs font-bold p-2">下一題<i class="fas fa-chevron-right ml-1"></i></button>`}</div>`;
+            card.innerHTML = `<div class="flex justify-between items-center mb-6"><span class="text-slate-300 text-[10px] font-black tracking-[0.2em]">QUESTION ${currentIdx + 1} / ${currentExamItems.length}</span><button onclick="window.speak('${isVocab ? item.word : item.sentence}')" class="text-indigo-500 font-bold text-[10px] bg-indigo-50 px-4 py-2 rounded-full"><i class="fas fa-redo-alt mr-1"></i>重聽</button></div>${bodyHtml}<div class="${isChoice ? 'hidden' : 'mt-8'}"><input type="text" id="examInput" onkeydown="handleKeydown(event)" value="${examUserAnswers[currentIdx]}" class="w-full border-b-4 border-indigo-100 text-4xl text-center p-2 mb-4 outline-none focus:border-indigo-500 font-black" placeholder="..." autocomplete="off"></div><div class="flex justify-between mt-8 pt-4 border-t border-slate-50"><button onclick="window.movePrev()" class="text-indigo-400 text-xs font-bold p-2 ${currentIdx === 0 ? 'invisible' : ''}"><i class="fas fa-chevron-left mr-1"></i>上題</button>${currentIdx === currentExamItems.length - 1 ? `<button onclick="window.finalizeExam()" class="bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95">提交</button>` : `<button onclick="window.moveNext()" class="text-indigo-400 text-xs font-bold p-2">下題<i class="fas fa-chevron-right ml-1"></i></button>`}</div>`;
             if(!isChoice) setTimeout(() => document.getElementById('examInput').focus(), 400);
             window.speak(isVocab ? item.word : item.sentence);
         }
@@ -283,7 +274,12 @@
         }
 
         window.handleKeydown = (e) => { if(e.key === "Enter") { window.saveCurAns(); window.moveNext(); } };
-        window.handleChoice = (val) => { examUserAnswers[currentIdx] = val.toLowerCase(); setTimeout(window.moveNext, 150); };
+        // 重要：選擇題處理
+        window.handleChoice = (val) => { 
+            examUserAnswers[currentIdx] = val.toLowerCase(); 
+            renderExamCard(); // 立即重新渲染讓弟弟看到選中了
+            setTimeout(window.moveNext, 150); 
+        };
         window.saveCurAns = () => { const i = document.getElementById('examInput'); if(i) examUserAnswers[currentIdx] = i.value.trim().toLowerCase(); };
         window.movePrev = () => { window.saveCurAns(); if(currentIdx > 0) { currentIdx--; renderExamCard(); } };
         window.moveNext = () => { window.saveCurAns(); if(currentIdx < currentExamItems.length - 1) { currentIdx++; renderExamCard(); } else { window.finalizeExam(); } };
@@ -291,9 +287,10 @@
         window.finalizeExam = () => {
             window.saveCurAns(); let score = 0; const now = new Date();
             const results = currentExamItems.map((q, i) => {
-                const correct = q.word.toLowerCase().trim(); const user = examUserAnswers[i].toLowerCase().trim();
+                const correct = q.word.toLowerCase().trim();
+                const user = examUserAnswers[i].toLowerCase().trim();
                 const ok = user === correct; if(ok) score += 5;
-                let dc = correct, du = user || "(Empty)";
+                let dc = correct, du = user || "(未填)";
                 if (i >= 5 && i < 10) {
                     const opts = examOptionsState[i];
                     const ci = opts.findIndex(o => o.toLowerCase().trim() === correct) + 1;
@@ -319,7 +316,7 @@
                 <tr class="${s.ok ? 'bg-green-50/30' : 'bg-red-50/30'}">
                     <td><div class="font-black text-slate-800">${i+1}</div></td>
                     <td class="font-bold text-indigo-700">${s.correct}</td>
-                    <td class="${s.ok ? 'text-green-600' : 'text-red-500'} font-bold">${s.user}</td>
+                    <td class="${s.ok ? 'text-green-600' : 'text-red-500'} font-black">${s.user}</td>
                     <td class="text-center">${s.ok ? '✓' : '✗'}</td>
                 </tr>
             `).join('');
@@ -331,10 +328,7 @@
         function toggleLoader(show) {
             const idle = document.getElementById('idleUI');
             const load = document.getElementById('loadingUI');
-            if(idle && load) {
-                idle.classList.toggle('hidden', show);
-                load.classList.toggle('hidden', !show);
-            }
+            if(idle && load) { idle.classList.toggle('hidden', show); load.classList.toggle('hidden', !show); }
         }
 
         function compressImage(file) {
@@ -354,14 +348,17 @@
 
         window.switchTab = (name) => {
             const sections = ['listPage', 'quizPage', 'historyPage', 'resultPage'];
-            sections.forEach(s => document.getElementById(s).classList.add('hidden'));
-            document.getElementById(name + 'Page').classList.remove('hidden');
+            sections.forEach(s => { const el = document.getElementById(s); if(el) el.classList.add('hidden'); });
+            const target = document.getElementById(name + 'Page');
+            if(target) target.classList.remove('hidden');
+            
             ['nav-list', 'nav-quiz', 'nav-history'].forEach(id => document.getElementById(id).classList.remove('nav-active'));
             const activeId = (name === 'result' || name === 'history') ? 'nav-history' : 'nav-' + name;
-            if(document.getElementById(activeId)) document.getElementById(activeId).classList.add('nav-active');
+            const activeNav = document.getElementById(activeId);
+            if(activeNav) activeNav.classList.add('nav-active');
         };
 
-        window.fullReset = () => { if(confirm("確定清除？")) { localStorage.clear(); location.reload(); } };
+        window.fullReset = () => { if(confirm("確定？")) { localStorage.clear(); location.reload(); } };
         window.toggleSettings = () => document.getElementById('settingsSection').classList.toggle('hidden');
         window.exportData = () => {
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type:'application/json'}));
