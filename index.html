@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小三英文 AI 助手 - 全自動版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
+        .loading-ring { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="pb-24">
+
+    <header class="bg-blue-600 text-white p-5 shadow-lg sticky top-0 z-30 rounded-b-2xl">
+        <div class="flex justify-between items-center max-w-2xl mx-auto">
+            <h1 class="text-xl font-bold italic"><i class="fas fa-robot mr-2"></i>AI 英文助手</h1>
+            <div class="bg-blue-500 px-3 py-1 rounded-full text-xs">API 連線中</div>
+        </div>
+    </header>
+
+    <main class="p-4 max-w-2xl mx-auto">
+        
+        <section id="aiSection" class="mb-6">
+            <div class="bg-white rounded-3xl p-6 shadow-md border-2 border-blue-100 text-center">
+                <div id="idleState">
+                    <i class="fas fa-magic text-4xl text-blue-500 mb-4"></i>
+                    <h2 class="text-lg font-bold mb-4">AI 一鍵自動辨識考卷</h2>
+                    <input type="file" id="aiImageInput" accept="image/*" class="hidden" onchange="processImageWithAI(event)">
+                    <button onclick="document.getElementById('aiImageInput').click()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all">
+                        <i class="fas fa-camera mr-2"></i> 拍照並自動匯入題庫
+                    </button>
+                </div>
+
+                <div id="loadingState" class="hidden py-8">
+                    <div class="loading-ring border-4 border-gray-200 h-12 w-12 rounded-full mx-auto mb-4"></div>
+                    <p class="text-blue-600 font-bold">Gemini 正在分析圖片並翻譯...</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="flex bg-gray-200 p-1 rounded-2xl mb-4">
+            <button onclick="showPage('list')" id="tabList" class="flex-1 py-2 rounded-xl font-bold text-sm bg-white shadow">題庫管理</button>
+            <button onclick="startQuiz()" id="tabQuiz" class="flex-1 py-2 rounded-xl font-bold text-sm text-gray-500">開始測驗</button>
+        </div>
+
+        <section id="listPage">
+            <div id="mainItemList" class="space-y-3"></div>
+        </section>
+
+        <section id="quizPage" class="hidden">
+            <div id="quizContainer" class="bg-white rounded-[2rem] shadow-xl p-8 text-center min-h-[400px] flex flex-col justify-center border-4 border-blue-50"></div>
+        </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 w-full bg-white/80 backdrop-blur-md border-t flex justify-around p-4 shadow-lg z-40">
+        <button onclick="showPage('list')" class="text-blue-600 flex flex-col items-center"><i class="fas fa-list"></i><span class="text-xs">題庫</span></button>
+        <button onclick="startQuiz()" class="text-gray-400 flex flex-col items-center"><i class="fas fa-play"></i><span class="text-xs">練習</span></button>
+    </nav>
+
+    <script type="module">
+        // --- 設定區：請在這裡填入你的 API Key ---
+        const API_KEY = "AIzaSyAG8ZRv5S2nddcjY1YlMp-llnWhdB1lb0Y"; // <--- 填入你的 Key
+        
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+        let db = JSON.parse(localStorage.getItem('aiStudyDB')) || [];
+
+        // 初始化
+        window.onload = () => { renderList(); };
+        window.processImageWithAI = processImageWithAI;
+        window.showPage = showPage;
+        window.startQuiz = startQuiz;
+        window.speak = speak;
+        window.deleteItem = deleteItem;
+        window.checkAns = checkAns;
+
+        // --- AI 處理核心 ---
+        async function processImageWithAI(event) {
+            const file = event.target.files[0];
+            if (!file || API_KEY === "YOUR_GEMINI_API_KEY") {
+                alert("請確認已填入 API Key！");
+                return;
+            }
+
+            document.getElementById('idleState').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('hidden');
+
+            try {
+                const base64Data = await fileToBase64(file);
+                const genAI = new GoogleGenerativeAI(API_KEY);
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+                const prompt = "這是一張小學三年級的英文考卷。請辨識出圖中所有的英文單字與英文句子，並翻譯成繁體中文。請嚴格按照以下格式輸出，不要有額外文字：\n單字或句子 | 繁體中文翻譯";
+
+                const result = await model.generateContent([
+                    prompt,
+                    { inlineData: { data: base64Data.split(',')[1], mimeType: file.type } }
+                ]);
+
+                const responseText = result.response.text();
+                parseAndSave(responseText);
+                alert("AI 辨識完成並已加入題庫！");
+            } catch (error) {
+                console.error(error);
+                alert("AI 辨識失敗，請檢查 API Key 或網路環境");
+            } finally {
+                document.getElementById('idleState').classList.remove('hidden');
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+        }
+
+        function parseAndSave(text) {
+            const lines = text.split('\n');
+            lines.forEach(line => {
+                if (line.includes('|')) {
+                    const [word, trans] = line.split('|').map(s => s.trim());
+                    if (word && trans) db.push({ id: Date.now() + Math.random(), word, trans });
+                }
+            });
+            saveDB();
+        }
+
+        // 輔助工具：將檔案轉為 Base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // --- 資料管理 ---
+        function saveDB() { localStorage.setItem('aiStudyDB', JSON.stringify(db)); renderList(); }
+
+        function renderList() {
+            const list = document.getElementById('mainItemList');
+            list.innerHTML = db.map((item, idx) => `
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2">
+                    <div>
+                        <div class="font-bold text-blue-800">${item.word}</div>
+                        <div class="text-xs text-gray-400">${item.trans}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="speak('${item.word}')" class="w-10 h-10 bg-blue-50 text-blue-500 rounded-full"><i class="fas fa-volume-up"></i></button>
+                        <button onclick="deleteItem(${idx})" class="w-10 h-10 bg-gray-50 text-gray-300 rounded-full"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            `).reverse().join('');
+        }
+
+        function deleteItem(idx) {
+            db.splice(db.length - 1 - idx, 1);
+            saveDB();
+        }
+
+        function speak(text) {
+            const ut = new SpeechSynthesisUtterance(text);
+            ut.lang = 'en-US';
+            ut.rate = 0.8;
+            window.speechSynthesis.speak(ut);
+        }
+
+        function showPage(name) {
+            document.getElementById('listPage').classList.toggle('hidden', name !== 'list');
+            document.getElementById('quizPage').classList.toggle('hidden', name !== 'quiz');
+        }
+
+        // --- 測驗系統 ---
+        let qIdx = 0;
+        function startQuiz() {
+            if (db.length === 0) return alert("題庫沒東西喔！");
+            qIdx = 0; showPage('quiz'); renderQuiz();
+        }
+
+        function renderQuiz() {
+            const item = db[qIdx];
+            const container = document.getElementById('quizContainer');
+            container.innerHTML = `
+                <div class="mb-8">
+                    <button onclick="speak('${item.word}')" class="w-24 h-24 bg-blue-600 text-white rounded-full shadow-lg mb-4 hover:scale-105 transition-transform">
+                        <i class="fas fa-volume-up text-3xl"></i>
+                    </button>
+                    <div class="text-blue-500 font-bold">提示：${item.trans}</div>
+                </div>
+                <input type="text" id="qInput" class="w-full border-b-4 border-blue-100 text-3xl text-center p-2 mb-8 outline-none focus:border-blue-500" placeholder="打出英文..." autocomplete="off">
+                <button onclick="checkAns()" class="w-full bg-blue-900 text-white py-4 rounded-2xl font-bold text-xl shadow-lg">檢查答案</button>
+                <div class="mt-4 text-gray-300 text-xs">${qIdx + 1} / ${db.length}</div>
+            `;
+            speak(item.word);
+            setTimeout(() => document.getElementById('qInput').focus(), 300);
+        }
+
+        function checkAns() {
+            const input = document.getElementById('qInput');
+            const correct = db[qIdx].word.toLowerCase().replace(/[.?!,]/g, '');
+            const user = input.value.trim().toLowerCase().replace(/[.?!,]/g, '');
+
+            if (user === correct) {
+                qIdx++;
+                if (qIdx < db.length) renderQuiz();
+                else { alert("全部答對了！你太強了！"); showPage('list'); }
+            } else {
+                alert(`正確答案是：${db[qIdx].word}`);
+                speak(db[qIdx].word);
+            }
+        }
+    </script>
+</body>
+</html>
