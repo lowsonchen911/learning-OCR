@@ -19,8 +19,6 @@
         .nav-active i { transform: translateY(-3px); }
         .official-table th { background: #f1f5f9; color: #64748b; font-size: 10px; padding: 10px 8px; text-align: left; }
         .official-table td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        /* 側邊搜尋拉 Bar 效果 */
-        #itemList { scroll-behavior: smooth; }
     </style>
 </head>
 <body class="pb-24">
@@ -28,8 +26,8 @@
     <header class="bg-indigo-700 text-white p-6 shadow-xl sticky top-0 z-30 rounded-b-[2rem]">
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
-                <h1 class="text-2xl font-black italic flex items-center"><i class="fas fa-spell-check mr-2 text-yellow-300"></i>聽考 Pro</h1>
-                <p id="versionTag" class="text-[9px] text-indigo-200 font-bold uppercase tracking-widest">Version: 2026.04.24-Final-S5</p>
+                <h1 class="text-2xl font-black italic flex items-center"><i class="fas fa-check-circle mr-2 text-yellow-300"></i>聽考 Pro</h1>
+                <p id="versionTag" class="text-[9px] text-indigo-200 font-bold uppercase tracking-widest">Version: 2026.04.24-Stable-S6</p>
             </div>
             <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full active:scale-90 transition-all"><i class="fas fa-cog text-xl text-yellow-300"></i></button>
         </div>
@@ -61,22 +59,22 @@
                     </div>
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
                     <button onclick="window.checkBeforeUpload()" id="scanBtn" class="w-full bg-indigo-100 text-indigo-700 py-4 rounded-2xl font-bold shadow-sm active:scale-95 transition-all">
-                        <i class="fas fa-camera mr-2"></i> 拍照自動辨識匯入
+                        <i class="fas fa-camera mr-2"></i> 拍照自動辨識匯入 (不比對)
                     </button>
                 </div>
                 <div id="loadingUI" class="hidden py-10 text-center">
                     <i class="fas fa-circle-notch spin text-4xl text-indigo-600 mb-4 inline-block"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse">AI 正在努力解析...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse">AI 正在努力辨識...</p>
                 </div>
             </div>
 
             <div class="bg-white p-4 rounded-3xl space-y-3 shadow-sm border border-slate-100">
                 <div class="relative">
                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-indigo-300"></i>
-                    <input type="text" id="wordSearch" oninput="window.updateUI()" placeholder="搜尋 A-Z 題庫..." class="w-full bg-slate-50 rounded-2xl py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-400 border border-indigo-50">
+                    <input type="text" id="wordSearch" oninput="window.updateUI()" placeholder="搜尋 A-Z 題庫..." class="w-full bg-slate-50 rounded-2xl py-3 pl-10 pr-4 text-sm outline-none border border-indigo-50">
                 </div>
-                <button onclick="window.cleanDuplicates()" class="w-full bg-yellow-50 text-yellow-700 py-3 rounded-2xl font-bold text-[10px] border border-yellow-100 active:scale-95 transition-all uppercase tracking-widest">
-                    <i class="fas fa-broom mr-1"></i> Cleanup Duplicates
+                <button onclick="window.cleanDuplicates()" class="w-full bg-yellow-50 text-yellow-700 py-3 rounded-2xl font-bold text-[10px] border border-yellow-100 active:scale-95 transition-all uppercase">
+                    <i class="fas fa-broom mr-1"></i> 一鍵清理重複單字
                 </button>
             </div>
 
@@ -95,7 +93,7 @@
         <section id="resultPage" class="hidden">
             <div class="bg-white rounded-[2.5rem] shadow-2xl p-6 border border-slate-100">
                 <div class="text-center border-b pb-6 mb-4">
-                    <div id="resCode" class="text-[10px] text-slate-400 font-mono mb-2 font-bold tracking-widest uppercase">---</div>
+                    <div id="resCode" class="text-[10px] text-slate-400 font-mono mb-2 font-bold uppercase">---</div>
                     <div id="scoreDisplay" class="text-7xl font-black text-indigo-700 mb-2">0</div>
                     <div class="flex justify-center gap-4 text-[10px] font-bold text-slate-400">
                         <span id="resDate">---</span> <span id="resTime">---</span>
@@ -113,7 +111,7 @@
     </main>
 
     <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t flex justify-around p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40 rounded-t-[2rem]">
-        <button onclick="window.switchTab('list')" id="nav-list" class="flex flex-col items-center text-slate-300 transition-all"><i class="fas fa-book-open text-xl"></i><span class="text-[10px] mt-1 font-bold">題庫</span></button>
+        <button onclick="window.switchTab('list')" id="nav-list" class="flex flex-col items-center text-slate-300 transition-all"><i class="fas fa-list-ul text-xl"></i><span class="text-[10px] mt-1 font-bold">題庫</span></button>
         <button onclick="window.startExam()" id="nav-quiz" class="flex flex-col items-center text-slate-300 transition-all"><i class="fas fa-play-circle text-2xl"></i><span class="text-[10px] mt-1 font-bold">聽考</span></button>
         <button onclick="window.switchTab('history')" id="nav-history" class="flex flex-col items-center text-slate-300 transition-all"><i class="fas fa-history text-xl"></i><span class="text-[10px] mt-1 font-bold">紀錄</span></button>
     </nav>
@@ -147,7 +145,8 @@
 
         window.saveSettings = () => { localStorage.setItem('vAdmin_key', document.getElementById('apiKeyInput').value.trim()); location.reload(); };
 
-        // --- 核心恢復：還原 V2 原始辨識代碼段落 ---
+        // --- [AI 辨識段落物理鎖定] ---
+        // 以下內容完全依照 Ultimate-Pro-V2，絕對不改
         function processRawData(text, grade) {
             text.split('\n').forEach(line => {
                 if (line.includes('|')) {
@@ -163,20 +162,6 @@
             saveDB();
         }
 
-        window.handleManual = async () => {
-            const word = document.getElementById('manualInput').value.trim().toLowerCase();
-            if(!word) return;
-            toggleLoader(true);
-            try {
-                const aiRes = await callGemini(`針對${gradeSelect.value}程度，翻譯「${word}」並造英文例句。格式：單字 | 翻譯 | 例句`, localStorage.getItem('vAdmin_key'));
-                processRawData(aiRes, gradeSelect.value);
-                document.getElementById('manualInput').value = "";
-            } catch (e) { alert("連線繁忙"); }
-            finally { toggleLoader(false); }
-        };
-
-        window.checkBeforeUpload = () => { if(!activeModel) return window.toggleSettings(true); document.getElementById('cameraInput').click(); };
-
         window.handleAiUpload = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -184,14 +169,28 @@
             try {
                 const b64 = await compressImage(file);
                 const k = localStorage.getItem('vAdmin_key');
-                // 恢復 V2 指令
                 const p = `Identify words from image. Output: Word | Translation | Simple Sentence. KEEP ALL SPACES.`;
                 const aiRes = await callGemini(p, k, b64);
                 processRawData(aiRes, gradeSelect.value);
-                alert("辨識匯入成功！");
+                alert("辨識入庫成功！");
             } catch (err) { alert("Error 429/503"); }
             finally { toggleLoader(false); e.target.value = ''; }
         };
+        // --- [AI 辨識段落結束] ---
+
+        window.handleManual = async () => {
+            const word = document.getElementById('manualInput').value.trim().toLowerCase();
+            if(!word) return;
+            toggleLoader(true);
+            try {
+                const aiRes = await callGemini(`OCR: "${word}". Word | Translation | Simple Sentence.`, localStorage.getItem('vAdmin_key'));
+                processRawData(aiRes, gradeSelect.value);
+                document.getElementById('manualInput').value = "";
+            } catch (e) { alert("失敗"); }
+            finally { toggleLoader(false); }
+        };
+
+        window.checkBeforeUpload = () => { if(!activeModel) return window.toggleSettings(true); document.getElementById('cameraInput').click(); };
 
         async function callGemini(p, k, b64 = null) {
             const url = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${k}`;
@@ -204,33 +203,32 @@
 
         function saveDB() { localStorage.setItem('vAdmin_db', JSON.stringify(db)); window.updateUI(); }
 
-        // --- 強補：A-Z 排序與搜尋功能 ---
+        // --- [Local 端 UI 強化：搜尋與 A-Z 排序] ---
         window.updateUI = () => {
             const searchVal = (document.getElementById('wordSearch')?.value || "").toLowerCase();
             const listEl = document.getElementById('itemList');
             if(!listEl) return;
 
-            // 1. 過濾 & 2. A-Z 升冪排序
+            // 在 Local 端過濾並排序，不干涉原始數據
             let filtered = db.filter(i => i.word.toLowerCase().includes(searchVal))
                              .sort((a, b) => a.word.localeCompare(b.word));
 
             listEl.innerHTML = filtered.map(item => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-1 border border-slate-100">
                     <div onclick="window.speak('${item.word}')" class="flex-1 cursor-pointer">
-                        <div class="font-bold text-indigo-900">${item.word} <span class="text-[9px] bg-indigo-50 text-indigo-400 px-2 py-1 rounded ml-2">${item.grade}</span></div>
+                        <div class="font-bold text-indigo-900">${item.word}</div>
                         <div class="text-[10px] text-slate-400">${item.trans}</div>
                     </div>
                     <button onclick="window.deleteItem(${item.id})" class="text-slate-200 p-2"><i class="fas fa-trash-alt"></i></button>
                 </div>
             `).join('');
 
-            // 渲染歷史列表
             const histEl = document.getElementById('historyList');
             if(histEl) {
                 histEl.innerHTML = history.slice().reverse().map((h, i) => `
                     <div onclick="window.viewReport(${history.length - 1 - i})" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center active:scale-95 transition-all">
                         <div><div class="text-[10px] font-mono text-slate-400">${h.code}</div><div class="font-black text-indigo-900 text-lg">${h.score} 分</div></div>
-                        <div class="text-right text-[10px] font-bold text-indigo-500">${h.date.split(' ')[0]}<br>點擊看報表 <i class="fas fa-chevron-right ml-1"></i></div>
+                        <div class="text-right text-[10px] font-bold text-indigo-500">${h.date.split(' ')[0]}<br>點擊看詳情 <i class="fas fa-chevron-right ml-1"></i></div>
                     </div>
                 `).join('');
             }
@@ -246,7 +244,7 @@
 
         window.deleteItem = (id) => { if(confirm("刪除？")) { db = db.filter(i => i.id !== id); saveDB(); } };
 
-        // --- 聽考系統核心 (維持穩定挖空邏輯) ---
+        // --- 聽考系統 (維持 V2 邏輯) ---
         window.startExam = () => {
             if (db.length < 5) return alert("單字量不足。");
             let shuffled = [...db].sort(() => 0.5 - Math.random());
@@ -268,7 +266,7 @@
 
             let bodyHtml = "";
             if (isVocab) {
-                bodyHtml = `<div class="flex-1 flex flex-col justify-center"><button onclick="window.speak('${item.word}')" class="w-32 h-32 bg-indigo-600 text-white rounded-full mx-auto mb-8 shadow-2xl"><i class="fas fa-volume-up text-4xl"></i></button><div class="text-slate-300 text-xs font-bold uppercase italic tracking-widest">Listen and Spell</div></div>`;
+                bodyHtml = `<div class="flex-1 flex flex-col justify-center"><button onclick="window.speak('${item.word}')" class="w-32 h-32 bg-indigo-600 text-white rounded-full mx-auto mb-8 shadow-2xl active:scale-95"><i class="fas fa-volume-up text-4xl"></i></button><div class="text-slate-300 text-xs font-bold uppercase italic tracking-widest">Listen and Spell</div></div>`;
             } else if (isChoice) {
                 if (!examOptionsState[currentIdx]) { examOptionsState[currentIdx] = generateQuizOptions(item.word); }
                 const opts = examOptionsState[currentIdx];
@@ -312,12 +310,12 @@
             const code = `${gradeSelect.value}_${now.toISOString().slice(0,10).replace(/-/g,'')}_${String(history.length+1).padStart(2,'0')}`;
             const record = { code, score, date: now.toLocaleString(), results };
             history.push(record); localStorage.setItem('vAdmin_history', JSON.stringify(history));
-            showReportDetails(record);
+            showFullReport(record);
         };
 
-        window.viewReport = (index) => { showReportDetails(history[index]); };
+        window.viewReport = (index) => { showFullReport(history[index]); };
 
-        function showReportDetails(record) {
+        function showFullReport(record) {
             document.getElementById('resCode').innerText = record.code;
             document.getElementById('scoreDisplay').innerText = record.score;
             document.getElementById('resDate').innerText = record.date.split(' ')[0];
@@ -361,7 +359,11 @@
             sections.forEach(s => { const el = document.getElementById(s); if(el) el.classList.add('hidden'); });
             const target = document.getElementById(name + 'Page');
             if(target) target.classList.remove('hidden');
-            ['nav-list', 'nav-quiz', 'nav-history'].forEach(id => document.getElementById(id).classList.remove('nav-active'));
+            
+            ['nav-list', 'nav-quiz', 'nav-history'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.remove('nav-active');
+            });
             const activeId = (name === 'result' || name === 'history') ? 'nav-history' : 'nav-' + name;
             const activeNav = document.getElementById(activeId);
             if(activeNav) activeNav.classList.add('nav-active');
