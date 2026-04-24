@@ -3,171 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小三英文 AI (直連版)</title>
+    <title>AI 核心診斷工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #f0f2f5; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: #f9fafb; }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="p-4">
+<body class="p-6">
 
     <div class="max-w-md mx-auto space-y-6">
-        <div class="text-center py-4">
-            <h1 class="text-2xl font-black text-indigo-600 italic">小三英文 AI 直連版</h1>
-            <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Version: 2026.04.24-22 (Raw Fetch v1)</p>
+        <header class="text-center">
+            <h1 class="text-xl font-black text-slate-800 tracking-tighter">Gemini OCR 核心對接</h1>
+            <p class="text-[9px] text-slate-400">VERSION 2026.04.24-ULTRA_LEAN</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase">Google API Key</label>
+            <input type="password" id="apiKey" class="w-full p-3 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 mb-4 text-sm" placeholder="AIza...">
+            <button onclick="saveKey()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm">儲存金鑰</button>
         </div>
 
-        <div class="bg-white rounded-[2rem] p-6 shadow-xl border border-white">
-            <div id="setupArea" class="space-y-4">
-                <input type="password" id="apiKey" placeholder="在此輸入 API Key" class="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                <button onclick="saveKey()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all">儲存並啟動</button>
-            </div>
-
-            <div id="mainUI" class="hidden space-y-6">
-                <div class="flex items-center justify-between text-xs font-bold text-gray-400 px-2">
-                    <span>模式：Gemini 1.5 Flash (v1)</span>
-                    <button onclick="resetApp()" class="text-red-400">清除 Key</button>
-                </div>
-                
-                <input type="file" id="imgInput" accept="image/*" class="hidden" onchange="handleProcess(event)">
-                <button id="scanBtn" onclick="document.getElementById('imgInput').click()" class="w-full bg-indigo-600 text-white py-6 rounded-[1.5rem] font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3">
-                    <i class="fas fa-camera text-xl"></i>
-                    <span>開始辨識單字</span>
+        <div id="scanArea" class="hidden space-y-4">
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-indigo-50 text-center">
+                <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="processImage(event)">
+                <button id="btn" onclick="document.getElementById('fileInput').click()" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto flex items-center justify-center shadow-lg active:scale-90 transition-all">
+                    <i class="fas fa-camera text-3xl"></i>
                 </button>
+                <h2 class="mt-4 font-bold text-slate-700">點擊拍照辨識</h2>
+                <p id="statusTxt" class="text-[10px] text-slate-400 mt-2">支援自動縮圖防爆功能</p>
+            </div>
 
-                <div id="status" class="hidden text-center py-4">
-                    <i class="fas fa-circle-notch spin text-indigo-500 text-3xl mb-2"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse text-sm">正在繞過路由直接連線中...</p>
-                </div>
+            <div class="bg-slate-900 rounded-2xl p-4 h-64 overflow-y-auto font-mono text-[10px] text-green-400" id="log">
+                [SYSTEM] 等待任務開始...
             </div>
         </div>
-
-        <div id="resultArea" class="space-y-2"></div>
     </div>
 
     <script>
-        // 初始化載入
+        const log = (msg, isErr = false) => {
+            const div = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = isErr ? 'text-red-400' : 'text-green-400';
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            div.appendChild(entry);
+            div.scrollTop = div.scrollHeight;
+        };
+
         window.onload = () => {
-            const key = localStorage.getItem('raw_gemini_key');
-            if(key) {
-                document.getElementById('apiKey').value = key;
-                showMainUI();
+            if(localStorage.getItem('study_key')) {
+                document.getElementById('apiKey').value = localStorage.getItem('study_key');
+                document.getElementById('scanArea').classList.remove('hidden');
             }
-            renderList();
         };
 
         function saveKey() {
-            const val = document.getElementById('apiKey').value.trim();
-            if(!val.startsWith("AIza")) return alert("格式不對。");
-            localStorage.setItem('raw_gemini_key', val);
-            showMainUI();
+            const key = document.getElementById('apiKey').value.trim();
+            if(!key.startsWith("AIza")) return alert("格式錯誤！");
+            localStorage.setItem('study_key', key);
+            document.getElementById('scanArea').classList.remove('hidden');
+            log("API Key 已更新，系統就緒。");
         }
 
-        function showMainUI() {
-            document.getElementById('setupArea').classList.add('hidden');
-            document.getElementById('mainUI').classList.remove('hidden');
-        }
-
-        function resetApp() {
-            localStorage.clear();
-            location.reload();
-        }
-
-        async function handleProcess(e) {
+        async function processImage(e) {
             const file = e.target.files[0];
             if(!file) return;
 
-            const btn = document.getElementById('scanBtn');
-            const status = document.getElementById('status');
-            btn.classList.add('hidden');
-            status.classList.remove('hidden');
+            const btn = document.getElementById('btn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            log("正在處理圖片：使用極限縮圖策略...");
 
             try {
-                const base64Data = await toBase64(file);
-                const key = localStorage.getItem('raw_gemini_key');
-                
-                // --- 核心：手動構建 v1 穩定路徑，不使用 SDK ---
-                const modelId = "gemini-1.5-flash"; // 2026 最穩定的型號
-                const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${key}`;
+                // 1. 強制縮圖到 800px 寬度 (降低 Token 流量，避開 429)
+                const base64 = await compressImage(file, 800);
+                log("圖片已微縮，正在連線 Google 伺服器...");
 
-                const payload = {
-                    contents: [{
-                        parts: [
-                            { text: "辨識英文單字與翻譯。格式：英文 | 翻譯" },
-                            { inline_data: { mime_type: file.type, data: base64Data.split(',')[1] } }
-                        ]
-                    }]
-                };
+                const key = localStorage.getItem('study_key');
+                // 2. 使用 v1beta 路由，這是 2026 年最具彈性的介面
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: "只辨識這張英文考卷中的英文單字與中文翻譯，格式：英文 | 中文" },
+                                   { inline_data: { mime_type: "image/jpeg", data: base64.split(',')[1] } }]
+                        }]
+                    })
                 });
 
                 const data = await response.json();
 
-                if (data.error) {
+                if(data.error) {
                     throw new Error(data.error.message);
                 }
 
-                const aiText = data.candidates[0].content.parts[0].text;
-                processText(aiText);
-                alert("辨識成功！");
+                const result = data.candidates[0].content.parts[0].text;
+                log("--- 辨識結果 ---");
+                log(result);
+                alert("辨識成功！請看下方日誌。");
 
             } catch (err) {
-                console.error(err);
-                alert("連線失敗：" + err.message);
+                log("!! 錯誤：" + err.message, true);
+                if(err.message.includes("429")) log("提示：請等待 60 秒後再試，Google 正在冷卻你的 Key。", true);
             } finally {
-                btn.classList.remove('hidden');
-                status.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
                 e.target.value = '';
             }
         }
 
-        function processText(text) {
-            let db = JSON.parse(localStorage.getItem('studyDB_raw') || '[]');
-            text.split('\n').forEach(line => {
-                if(line.includes('|')) {
-                    let [word, trans] = line.split('|').map(s => s.trim());
-                    if(word && trans) db.push({ id: Date.now()+Math.random(), word, trans });
-                }
-            });
-            localStorage.setItem('studyDB_raw', JSON.stringify(db));
-            renderList();
-        }
-
-        function renderList() {
-            const container = document.getElementById('resultArea');
-            const db = JSON.parse(localStorage.getItem('studyDB_raw') || '[]');
-            container.innerHTML = db.reverse().map(item => `
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border-l-4 border-indigo-500">
-                    <div>
-                        <div class="font-bold text-slate-800">${item.word}</div>
-                        <div class="text-[10px] text-gray-400 font-medium">${item.trans}</div>
-                    </div>
-                    <button onclick="speak('${item.word}')" class="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center active:scale-90"><i class="fas fa-volume-up"></i></button>
-                </div>
-            `).join('');
-        }
-
-        function speak(t) {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(t);
-            u.lang = 'en-US';
-            window.speechSynthesis.speak(u);
-        }
-
-        function toBase64(file) {
-            return new Promise((r, j) => {
+        function compressImage(file, maxWidth) {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
-                reader.onload = () => r(reader.result);
-                reader.onerror = e => j(e);
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.src = ev.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const scale = maxWidth / img.width;
+                        canvas.width = maxWidth;
+                        canvas.height = img.height * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                };
             });
         }
     </script>
