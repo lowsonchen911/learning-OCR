@@ -11,81 +11,99 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #f0f7ff; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
         .loading-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .tab-active { color: #4f46e5; border-bottom: 3px solid #4f46e5; }
+        .quiz-card { transition: all 0.3s ease; }
+        .correct-flash { animation: flash 0.6s ease; }
+        @keyframes flash { 0% { background: white; } 50% { background: #dcfce7; } 100% { background: white; } }
     </style>
 </head>
 <body class="pb-28">
 
-    <header class="bg-indigo-600 text-white p-6 shadow-xl sticky top-0 z-30 rounded-b-[2rem]">
+    <header class="bg-indigo-700 text-white p-6 shadow-xl sticky top-0 z-30 rounded-b-[2rem]">
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
                 <h1 class="text-2xl font-black italic flex items-center">
-                    <i class="fas fa-robot mr-2 text-yellow-300"></i>AI 助手
+                    <i class="fas fa-magic mr-2 text-yellow-300"></i>AI 助手
                 </h1>
-                <p class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
-                    Version: 2026.04.24-05 (User API Key)
+                <p id="versionTag" class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
+                    Version: 2026.04.24-06
                 </p>
             </div>
-            <div class="flex gap-3 items-center">
-                <button onclick="toggleSettings()" class="text-white hover:text-yellow-300 transition-colors"><i class="fas fa-cog text-xl"></i></button>
-            </div>
+            <button onclick="toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all">
+                <i class="fas fa-cog text-xl text-yellow-300"></i>
+            </button>
         </div>
     </header>
 
     <main class="p-4 max-w-2xl mx-auto">
         
-        <section id="settingsSection" class="hidden mb-6 bg-yellow-50 border-2 border-yellow-200 rounded-3xl p-5 shadow-inner">
-            <h3 class="font-bold text-yellow-800 mb-2"><i class="fas fa-key mr-2"></i>API 設定</h3>
-            <p class="text-xs text-yellow-700 mb-3">請貼上從 Google AI Studio 申請的 API Key：</p>
-            <input type="password" id="apiKeyInput" placeholder="在此輸入 AIza... 開頭的 Key" class="w-full p-3 rounded-xl border-2 border-yellow-200 outline-none focus:border-yellow-500 text-sm mb-3">
-            <button onclick="saveSettings()" class="w-full bg-yellow-600 text-white py-2 rounded-xl font-bold text-sm">儲存設定</button>
+        <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold flex items-center"><i class="fas fa-key mr-2 text-yellow-400"></i>我的 API 設定</h3>
+                <button onclick="toggleSettings()" class="text-slate-400"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] text-slate-400 uppercase font-bold">Google AI Studio API Key</label>
+                    <input type="password" id="apiKeyInput" placeholder="貼上 AIza... 開頭的 Key" 
+                           class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mt-1 focus:ring-2 focus:ring-yellow-400 outline-none transition-all">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="saveSettings()" class="flex-1 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all">儲存並隱藏</button>
+                    <button onclick="exportData()" class="px-4 bg-slate-600 rounded-xl hover:bg-slate-500"><i class="fas fa-download"></i></button>
+                    <button onclick="importData()" class="px-4 bg-slate-600 rounded-xl hover:bg-slate-500"><i class="fas fa-upload"></i></button>
+                </div>
+            </div>
         </section>
 
         <section id="aiSection" class="mb-6">
-            <div class="bg-white rounded-[2.5rem] p-8 shadow-lg border-2 border-indigo-50 text-center">
+            <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200 text-center">
                 <div id="idleUI">
                     <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-camera text-3xl"></i>
                     </div>
-                    <h2 class="font-bold text-slate-700 text-lg">拍照辨識考卷</h2>
+                    <h2 class="font-bold text-slate-700 text-lg mb-6">新增學習內容</h2>
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
-                    <button onclick="checkAndTriggerUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-4 active:scale-95 transition-all">
-                        <i class="fas fa-magic mr-2 text-yellow-300"></i> 開始拍照辨識
-                    </button>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="checkKeyBeforeUpload()" class="col-span-2 bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">
+                            <i class="fas fa-expand mr-2 text-yellow-300"></i> 拍考卷辨識
+                        </button>
+                    </div>
                 </div>
 
                 <div id="loadingUI" class="hidden py-10">
-                    <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-500 mb-4"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse">AI 正在努力翻譯中...</p>
-                    <p class="text-[10px] text-slate-400 mt-2">模型：Gemini 1.5 Flash</p>
+                    <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-600 mb-4"></i>
+                    <p class="text-indigo-600 font-bold animate-pulse">AI 正在思考中...</p>
+                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 font-mono">Connecting to Gemini...</p>
                 </div>
             </div>
         </section>
 
         <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6 shadow-inner">
-            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">目前題庫</button>
-            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">測驗模式</button>
+            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">題庫管理</button>
+            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">練習模式</button>
         </div>
 
         <section id="listPage">
-            <div id="emptyTip" class="text-center py-10 text-slate-300 hidden">尚未加入單字</div>
+            <div id="emptyTip" class="text-center py-20 text-slate-300 hidden font-bold">空空如也，拍張考卷吧！</div>
             <div id="itemList" class="space-y-3"></div>
         </section>
 
         <section id="quizPage" class="hidden">
-            <div id="quizCard" class="bg-white rounded-[2.5rem] shadow-2xl p-8 text-center min-h-[450px] flex flex-col justify-center border border-indigo-50"></div>
+            <div id="quizCard" class="bg-white rounded-[2.5rem] shadow-2xl p-8 text-center min-h-[450px] flex flex-col justify-center border border-indigo-50 quiz-card">
+                </div>
         </section>
     </main>
 
     <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-lg border-t flex justify-around p-5 shadow-lg z-40">
         <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600">
-            <i class="fas fa-th-large text-xl"></i><span class="text-[10px] mt-1 font-bold">管理</span>
+            <i class="fas fa-home text-xl"></i><span class="text-[10px] mt-1 font-bold">主頁</span>
         </button>
         <button onclick="window.startQuiz()" class="flex flex-col items-center text-slate-400">
-            <i class="fas fa-play-circle text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span>
+            <i class="fas fa-pen-nib text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span>
         </button>
     </nav>
 
@@ -101,62 +119,69 @@
             if (savedKey) {
                 document.getElementById('apiKeyInput').value = savedKey;
             } else {
-                toggleSettings(true); // 如果沒 key，自動打開設定
+                toggleSettings(true);
             }
             window.updateUI();
         };
 
-        // 設定切換
-        window.toggleSettings = (forceShow = false) => {
+        // 設定控制
+        window.toggleSettings = (show = null) => {
             const sec = document.getElementById('settingsSection');
-            if (forceShow) sec.classList.remove('hidden');
+            if (show === true) sec.classList.remove('hidden');
+            else if (show === false) sec.classList.add('hidden');
             else sec.classList.toggle('hidden');
         };
 
         window.saveSettings = () => {
             const key = document.getElementById('apiKeyInput').value.trim();
-            if (!key.startsWith("AIza")) return alert("格式不對喔！API Key 通常是 AIza 開頭。");
+            if (!key.startsWith("AIza")) return alert("API Key 格式似乎不對喔！");
             localStorage.setItem('user_gemini_key', key);
-            alert("API Key 已成功儲存！");
-            toggleSettings(false);
+            alert("API 設定已儲存！");
+            window.toggleSettings(false);
         };
 
-        window.checkAndTriggerUpload = () => {
+        window.checkKeyBeforeUpload = () => {
             const key = localStorage.getItem('user_gemini_key');
             if (!key) {
-                alert("請先點擊右上角齒輪設定 API Key！");
-                toggleSettings(true);
+                alert("請先設定 API Key！");
+                window.toggleSettings(true);
             } else {
                 document.getElementById('cameraInput').click();
             }
         };
 
+        // AI 處理邏輯
         window.handleAiUpload = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             const apiKey = localStorage.getItem('user_gemini_key');
             toggleLoading(true);
+            const status = document.getElementById('debugStatus');
 
             try {
                 const base64 = await toBase64(file);
                 const genAI = new GoogleGenerativeAI(apiKey);
+                
+                // 使用最新穩定的 ID，並針對可能的 404 做處理
+                status.innerText = "Model: gemini-1.5-flash...";
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-                const prompt = "這是一張小學三年級英文考卷，請辨識單字與句子並翻譯成繁體中文。格式：單字 | 翻譯";
+                const prompt = "這是一張小學三年級英文考卷，請精確辨識其中的英文單字與英文句子，並翻譯成繁體中文。請只輸出格式：英文 | 繁體中文，每行一題，不要有其他廢話。";
+                
                 const result = await model.generateContent([
                     prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
                 ]);
 
-                processResponse(result.response.text());
-                alert("辨識成功！");
+                const text = result.response.text();
+                processResponse(text);
+                alert("辨識成功！題目已加入。");
             } catch (err) {
                 console.error(err);
-                if (err.message.includes("API key not valid")) {
-                    alert("API Key 錯誤！請檢查右上角設定中的 Key 是否貼對。");
-                    toggleSettings(true);
+                if (err.message.includes("not found")) {
+                    alert("AI 模型連線失敗 (404)。請確認您的 API Key 是否具備 Gemini 1.5 Flash 權限。");
                 } else {
-                    alert("執行錯誤: " + err.message);
+                    alert("AI 辨識發生錯誤: " + err.message);
                 }
             } finally {
                 toggleLoading(false);
@@ -165,11 +190,15 @@
         };
 
         function processResponse(text) {
-            text.split('\n').forEach(line => {
+            const lines = text.split('\n');
+            lines.forEach(line => {
                 if (line.includes('|')) {
                     let [word, trans] = line.split('|').map(s => s.trim());
-                    word = word.replace(/^[0-9]+[\.\s]*/, ''); 
-                    if (word && trans) db.push({ id: Date.now() + Math.random(), word, trans });
+                    // 清理雜訊
+                    word = word.replace(/^[0-9]+[\.\s]*/, '').replace(/^\(\s*\)/, '');
+                    if (word && trans) {
+                        db.push({ id: Date.now() + Math.random(), word, trans });
+                    }
                 }
             });
             window.saveDB();
@@ -186,100 +215,23 @@
             if(tip) tip.classList.toggle('hidden', db.length > 0);
             if(list) {
                 list.innerHTML = db.map(item => `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2 border border-slate-100">
-                        <div onclick="window.speak('${item.word}')" class="cursor-pointer">
-                            <div class="font-bold text-indigo-900">${item.word}</div>
-                            <div class="text-[10px] text-slate-400">${item.trans}</div>
+                    <div class="bg-white p-5 rounded-3xl shadow-sm flex justify-between items-center mb-2 border border-slate-100 hover:border-indigo-300 transition-all">
+                        <div onclick="window.speak('${item.word}')" class="cursor-pointer flex-1">
+                            <div class="font-bold text-indigo-900 text-lg">${item.word}</div>
+                            <div class="text-xs text-slate-400 font-medium">${item.trans}</div>
                         </div>
-                        <button onclick="window.deleteItem(${item.id})" class="text-slate-200 hover:text-red-400 p-2"><i class="fas fa-times"></i></button>
+                        <div class="flex gap-2">
+                            <button onclick="window.speak('${item.word}')" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center active:scale-90 transition-transform"><i class="fas fa-volume-up text-sm"></i></button>
+                            <button onclick="window.deleteItem(${item.id})" class="w-10 h-10 text-slate-200 hover:text-red-400 p-2"><i class="fas fa-times"></i></button>
+                        </div>
                     </div>
                 `).reverse().join('');
             }
         };
 
         window.deleteItem = (id) => {
-            if(confirm("確定要刪除這筆題目嗎？")) {
+            if(confirm("確定刪除嗎？")) {
                 db = db.filter(i => i.id !== id);
                 window.saveDB();
             }
         };
-
-        window.speak = (t) => {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(t);
-            u.lang = 'en-US'; u.rate = 0.8;
-            window.speechSynthesis.speak(u);
-        };
-
-        window.switchTab = (name) => {
-            document.getElementById('listPage').classList.toggle('hidden', name !== 'list');
-            document.getElementById('quizPage').classList.toggle('hidden', name !== 'quiz');
-            document.getElementById('aiSection').classList.toggle('hidden', name === 'quiz');
-        };
-
-        window.startQuiz = () => {
-            if (db.length === 0) return alert("題庫是空的喔！");
-            currentIdx = 0; window.switchTab('quiz'); renderQuiz();
-        };
-
-        function renderQuiz() {
-            const item = db[currentIdx];
-            const card = document.getElementById('quizCard');
-            card.innerHTML = `
-                <div class="text-slate-300 text-[10px] mb-8 font-bold tracking-widest uppercase">Progress ${currentIdx + 1} / ${db.length}</div>
-                <button onclick="window.speak('${item.word}')" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl active:scale-95 transition-all"><i class="fas fa-volume-up text-3xl"></i></button>
-                <div class="text-indigo-400 font-bold mb-8 text-xl">${item.trans}</div>
-                <input type="text" id="ansIn" class="w-full border-b-2 border-slate-200 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-bold" placeholder="..." autocomplete="off">
-                <button onclick="window.checkAns()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-xl shadow-lg">檢查答案</button>
-            `;
-            window.speak(item.word);
-            setTimeout(() => document.getElementById('ansIn').focus(), 400);
-        }
-
-        window.checkAns = () => {
-            const user = document.getElementById('ansIn').value.trim().toLowerCase().replace(/[.?!,]/g, '');
-            const correct = db[currentIdx].word.trim().toLowerCase().replace(/[.?!,]/g, '');
-            if (user === correct) {
-                currentIdx++;
-                if (currentIdx < db.length) renderQuiz();
-                else { alert("🎉 全數完成！"); window.switchTab('list'); }
-            } else {
-                alert(`正確答案是：${db[currentIdx].word}`);
-                window.speak(db[currentIdx].word);
-            }
-        };
-
-        function toBase64(file) {
-            return new Promise((r, j) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => r(reader.result);
-                reader.onerror = e => j(e);
-            });
-        }
-
-        function toggleLoading(s) {
-            document.getElementById('idleUI').classList.toggle('hidden', s);
-            document.getElementById('loadingUI').classList.toggle('hidden', !s);
-        }
-
-        window.exportData = () => {
-            const b = new Blob([JSON.stringify(db)], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-            a.download = 'study_data.json'; a.click();
-        };
-
-        window.importData = () => {
-            const i = document.createElement('input'); i.type = 'file';
-            i.onchange = e => {
-                const reader = new FileReader();
-                reader.onload = ev => { db = JSON.parse(ev.target.result); window.saveDB(); };
-                reader.readAsText(e.target.files[0]);
-            };
-            i.click();
-        };
-
-        window.updateUI();
-    </script>
-</body>
-</html>
