@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 英文考卷系統</title>
+    <title>小三英文 AI 模擬考系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -11,6 +11,8 @@
         body { font-family: 'Noto Sans TC', sans-serif; background: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
         .correct-flash { animation: flash 0.6s ease; }
         @keyframes flash { 0% { background: white; } 50% { background: #dcfce7; } 100% { background: white; } }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .btn-disabled { opacity: 0.4; cursor: not-allowed; }
     </style>
 </head>
@@ -19,55 +21,60 @@
     <header class="bg-indigo-700 text-white p-6 shadow-xl sticky top-0 z-30 rounded-b-[2rem]">
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
-                <h1 class="text-2xl font-black italic flex items-center"><i class="fas fa-edit mr-2 text-yellow-300"></i>AI 考卷系統</h1>
-                <p class="text-[9px] text-indigo-300 font-bold tracking-widest uppercase">Version: 2026.04.24-Ultimate</p>
+                <h1 class="text-2xl font-black italic flex items-center"><i class="fas fa-graduation-cap mr-2 text-yellow-300"></i>AI 考卷系統</h1>
+                <p class="text-[9px] text-indigo-300 font-bold tracking-widest uppercase">Version: 2026.04.24-Ultimate-S2</p>
             </div>
-            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full"><i class="fas fa-cog text-yellow-300"></i></button>
+            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all">
+                <i class="fas fa-cog text-xl text-yellow-300"></i>
+            </button>
         </div>
     </header>
 
     <main class="p-4 max-w-2xl mx-auto">
         <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
-            <h3 class="font-bold mb-4">設定與金鑰</h3>
-            <input type="password" id="apiKeyInput" placeholder="在此貼入 API Key" class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mb-4 outline-none text-white focus:ring-2 focus:ring-indigo-500">
+            <h3 class="font-bold mb-4 flex items-center"><i class="fas fa-key mr-2 text-yellow-400"></i> API 金鑰與管理</h3>
+            <input type="password" id="apiKeyInput" placeholder="在此貼入 API Key (AIza...)" class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mb-4 outline-none text-white focus:ring-2 focus:ring-indigo-500">
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="window.saveSettings()" class="col-span-2 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold">儲存設定</button>
-                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs">導出題庫</button>
-                <button onclick="window.fullReset()" class="bg-red-500/20 text-red-400 py-2 rounded-xl text-xs">清除全部</button>
+                <button onclick="window.saveSettings()" class="col-span-2 bg-indigo-500 py-3 rounded-xl font-bold active:scale-95 transition-all">儲存並重整</button>
+                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs border border-slate-600">導出題庫備份</button>
+                <button onclick="window.fullReset()" class="bg-red-500/20 text-red-400 py-2 rounded-xl text-xs border border-red-500/30">清除所有資料</button>
             </div>
         </section>
 
         <section id="aiSection" class="mb-6">
             <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-200">
-                <div class="flex gap-2 mb-4">
-                    <select id="gradeSelect" class="flex-1 bg-indigo-50 text-indigo-700 font-bold py-3 px-4 rounded-xl outline-none">
-                        <option value="G1">一年級</option><option value="G2">二年級</option>
-                        <option value="G3" selected>三年級</option><option value="G4">四年級</option>
-                        <option value="G5">五年級</option><option value="G6">六年級</option>
-                    </select>
-                </div>
-                
-                <div class="mb-4 flex gap-2">
-                    <input type="text" id="manualInput" placeholder="輸入英文單字 (例如 apple)" class="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-400">
-                    <button onclick="window.handleManual()" class="bg-indigo-600 text-white px-4 rounded-xl font-bold text-xs"><i class="fas fa-plus"></i></button>
-                </div>
+                <div id="idleUI">
+                    <div class="flex gap-2 mb-4">
+                        <select id="gradeSelect" class="flex-1 bg-indigo-50 text-indigo-700 font-bold py-3 px-4 rounded-xl outline-none border border-indigo-100">
+                            <option value="G1">一年級</option><option value="G2">二年級</option>
+                            <option value="G3" selected>三年級</option><option value="G4">四年級</option>
+                            <option value="G5">五年級</option><option value="G6">六年級</option>
+                        </select>
+                        <div id="modelBadge" class="bg-slate-100 text-slate-400 text-[9px] flex items-center px-3 rounded-xl font-bold uppercase tracking-tighter">偵測中...</div>
+                    </div>
+                    
+                    <div class="mb-4 flex gap-2">
+                        <input type="text" id="manualInput" placeholder="手動輸入單字 (例如 library)" class="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-400">
+                        <button onclick="window.handleManual()" class="bg-indigo-600 text-white px-5 rounded-xl font-bold active:scale-90 transition-all"><i class="fas fa-plus"></i></button>
+                    </div>
 
-                <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
-                <button onclick="window.checkBeforeUpload()" id="scanBtn" class="w-full bg-indigo-100 text-indigo-700 py-4 rounded-2xl font-bold shadow-sm active:scale-95 transition-all">
-                    <i class="fas fa-camera mr-2"></i> 拍照自動加入題庫
-                </button>
+                    <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
+                    <button onclick="window.checkBeforeUpload()" id="scanBtn" class="w-full bg-indigo-100 text-indigo-700 py-4 rounded-2xl font-bold shadow-sm active:scale-95 transition-all">
+                        <i class="fas fa-camera mr-2"></i> 拍照自動辨識題庫
+                    </button>
+                </div>
                 
                 <div id="loadingUI" class="hidden py-10 text-center">
-                    <i class="fas fa-circle-notch fa-spin text-4xl text-indigo-600 mb-4"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse" id="loaderText">AI 處理中...</p>
+                    <i class="fas fa-circle-notch spin text-4xl text-indigo-600 mb-4 inline-block"></i>
+                    <p class="text-indigo-600 font-bold animate-pulse" id="loaderText">AI 正在過濾並生成例句...</p>
                 </div>
             </div>
         </section>
 
-        <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6 shadow-inner">
-            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">我的題庫</button>
-            <button onclick="window.startExam()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">正式模擬考</button>
-            <button onclick="window.switchTab('history')" id="tabBtnHistory" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">歷史考卷</button>
+        <div class="flex bg-slate-200/50 p-1.5 rounded-2xl mb-6 shadow-inner">
+            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600 transition-all">題庫列表</button>
+            <button onclick="window.startExam()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">正式模擬考</button>
+            <button onclick="window.switchTab('history')" id="tabBtnHistory" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">考試紀錄</button>
         </div>
 
         <section id="listPage"><div id="itemList" class="space-y-3"></div></section>
@@ -78,21 +85,26 @@
         </section>
 
         <section id="resultPage" class="hidden">
-            <div class="bg-white rounded-[2.5rem] shadow-xl p-8">
+            <div class="bg-white rounded-[2.5rem] shadow-xl p-8 border border-slate-100">
                 <div class="text-center mb-8">
-                    <div id="resCode" class="text-[10px] text-slate-400 font-mono mb-2">G3_20260424_01</div>
+                    <div id="resCode" class="text-[10px] text-slate-400 font-mono mb-2">CODE: ---</div>
                     <div id="scoreDisplay" class="text-7xl font-black text-indigo-600 mb-2">100</div>
-                    <p class="font-bold text-slate-500">考試總結報告</p>
+                    <p class="font-bold text-slate-500">考卷評分報告</p>
                 </div>
-                <div id="resultSummary" class="space-y-2"></div>
-                <button onclick="window.switchTab('list')" class="w-full mt-8 bg-indigo-700 text-white py-4 rounded-2xl font-bold">確認</button>
+                <div id="resultSummary" class="space-y-2 max-h-60 overflow-y-auto px-2"></div>
+                <button onclick="window.switchTab('list')" class="w-full mt-8 bg-indigo-700 text-white py-4 rounded-2xl font-bold active:scale-95 shadow-lg">確認並返回</button>
             </div>
         </section>
     </main>
 
+    <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-lg border-t flex justify-around p-5 shadow-lg z-40">
+        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600"><i class="fas fa-th-large text-xl"></i><span class="text-[10px] mt-1 font-bold">首頁</span></button>
+        <button onclick="window.startExam()" class="flex flex-col items-center text-slate-400"><i class="fas fa-pen-nib text-xl"></i><span class="text-[10px] mt-1 font-bold">考卷</span></button>
+    </nav>
+
     <script type="module">
-        let db = JSON.parse(localStorage.getItem('ultimate_db')) || [];
-        let examHistory = JSON.parse(localStorage.getItem('exam_history')) || [];
+        let db = JSON.parse(localStorage.getItem('ultimate_db_s2')) || [];
+        let examHistory = JSON.parse(localStorage.getItem('exam_history_s2')) || [];
         let activeModel = "";
         let currentExam = [];
         let currentIdx = 0;
@@ -106,12 +118,14 @@
         };
 
         async function detectModel(key) {
+            const badge = document.getElementById('modelBadge');
             try {
                 const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
                 const d = await r.json();
                 const m = d.models.find(i => i.name.includes('1.5-flash')) || d.models[0];
                 activeModel = m.name;
-            } catch(e) { console.error("Key Error"); }
+                badge.innerText = m.displayName;
+            } catch(e) { badge.innerText = "Key Error"; }
         }
 
         window.saveSettings = () => {
@@ -119,22 +133,25 @@
             location.reload();
         };
 
-        // --- 手動輸入邏輯 ---
+        // --- 手動輸入 + AI 自動生成 ---
         window.handleManual = async () => {
             const input = document.getElementById('manualInput');
             const word = input.value.trim();
             if(!word) return;
             const grade = document.getElementById('gradeSelect').value;
             input.value = "";
-            toggleLoader(true, "AI 翻譯中...");
+            toggleLoader(true, "AI 翻譯與造句中...");
 
             try {
                 const key = localStorage.getItem('userKey_vFinal');
-                const prompt = `針對${grade}程度，翻譯「${word}」並造一個簡單英文例句。格式：單字 | 翻譯 | 例句`;
+                const prompt = `翻譯英文單字「${word}」。
+                    任務：
+                    1. 檢查是否為正確單字。
+                    2. 針對${grade}程度，造一個簡單英文例句。
+                    格式：單字 | 翻譯 | 例句`;
                 const aiRes = await callGemini(prompt, key);
                 processData(aiRes, grade);
-                alert(`已加入：${word}`);
-            } catch (e) { alert("翻譯失敗"); }
+            } catch (e) { alert("AI 連線失敗"); }
             finally { toggleLoader(false); }
         };
 
@@ -146,16 +163,20 @@
         window.handleAiUpload = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            toggleLoader(true, "AI 掃描辨識中...");
+            toggleLoader(true, "AI 正在掃描題庫...");
             const grade = document.getElementById('gradeSelect').value;
             try {
                 const base64 = await compressImage(file);
                 const key = localStorage.getItem('userKey_vFinal');
-                const prompt = `辨識圖片單字。任務：過濾雜訊，為${grade}造一個簡單英文例句。格式：單字 | 翻譯 | 例句。`;
+                const prompt = `辨識圖片中的所有英文單字。
+                    任務：
+                    1. 過濾所有括號、題號、中文與雜訊。
+                    2. 針對${grade}程度，為每個單字造一個簡單英文例句。
+                    格式：單字 | 翻譯 | 例句。每行一組。`;
                 const aiRes = await callGemini(prompt, key, base64);
                 processData(aiRes, grade);
-                alert("辨識成功！");
-            } catch (err) { alert("連線失敗"); }
+                alert("辨識成功！題目已加入並自動過濾雜訊。");
+            } catch (err) { alert("辨識發生錯誤"); }
             finally { toggleLoader(false); e.target.value = ''; }
         };
 
@@ -163,12 +184,7 @@
             const url = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${key}`;
             const parts = [{ text: prompt }];
             if(base64) parts.push({ inline_data: { mime_type: "image/jpeg", data: base64.split(',')[1] } });
-            
-            const resp = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts }] })
-            });
+            const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }] }) });
             const data = await resp.json();
             return data.candidates[0].content.parts[0].text;
         }
@@ -183,17 +199,17 @@
                     }
                 }
             });
-            saveDB();
+            window.saveDB();
         }
 
-        window.saveDB = () => { localStorage.setItem('ultimate_db', JSON.stringify(db)); updateUI(); };
+        window.saveDB = () => { localStorage.setItem('ultimate_db_s2', JSON.stringify(db)); updateUI(); };
 
         function updateUI() {
             const list = document.getElementById('itemList');
             list.innerHTML = db.slice().reverse().map(item => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2 border border-slate-100">
                     <div onclick="window.speak('${item.word}')" class="flex-1 cursor-pointer">
-                        <div class="font-bold text-indigo-900">${item.word} <span class="text-[9px] bg-slate-100 px-2 py-1 rounded text-slate-400 ml-2">${item.grade}</span></div>
+                        <div class="font-bold text-indigo-900">${item.word} <span class="text-[9px] bg-indigo-50 text-indigo-400 px-2 py-1 rounded ml-2">${item.grade}</span></div>
                         <div class="text-[10px] text-slate-400">${item.trans}</div>
                     </div>
                     <button onclick="window.deleteItem(${item.id})" class="text-slate-200 p-2"><i class="fas fa-trash-alt"></i></button>
@@ -204,22 +220,21 @@
             hList.innerHTML = examHistory.slice().reverse().map(h => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-slate-100">
                     <div>
-                        <div class="font-mono text-[10px] text-slate-400">${h.code}</div>
-                        <div class="font-bold text-indigo-900">${h.score} 分</div>
+                        <div class="font-mono text-[9px] text-indigo-400 font-bold">${h.code}</div>
+                        <div class="font-black text-indigo-900 text-lg">${h.score} 分</div>
                     </div>
-                    <div class="text-[9px] text-slate-300">${h.date}</div>
+                    <div class="text-[10px] text-slate-300">${h.date}</div>
                 </div>
             `).join('');
         }
 
-        window.deleteItem = (id) => { if(confirm("刪除？")) { db = db.filter(i => i.id !== id); window.saveDB(); } };
+        window.deleteItem = (id) => { if(confirm("確定刪除？")) { db = db.filter(i => i.id !== id); window.saveDB(); } };
 
-        // --- 正式考卷邏輯 (5單字/5選擇/10填空) ---
+        // --- 正式考卷邏輯 (5-5-10) ---
         window.startExam = () => {
-            if (db.length < 10) return alert("單字量不足以組成考卷(至少要10個)。");
+            if (db.length < 5) return alert("題庫單字量不足（至少需 5 個）。");
             let shuffled = [...db].sort(() => 0.5 - Math.random());
             currentExam = [];
-            // 挑選前 20 題 (不夠就循環)
             for(let i=0; i<20; i++) currentExam.push(shuffled[i % shuffled.length]);
             
             examResults = [];
@@ -232,34 +247,34 @@
             const item = currentExam[currentIdx];
             const card = document.getElementById('quizCard');
             let content = "";
-            const isVocab = currentIdx < 5;
-            const isChoice = currentIdx >= 5 && currentIdx < 10;
-            const isCloze = currentIdx >= 10;
+            const isVocab = currentIdx < 5; // 5 題拼寫
+            const isChoice = currentIdx >= 5 && currentIdx < 10; // 5 題選擇
+            const isCloze = currentIdx >= 10; // 10 題挖空 (無中文)
 
-            if (isVocab) { // 5 題單字：看中文拼英文
-                content = `<div class="mb-8"><div class="text-indigo-900 font-black text-4xl mb-4">${item.trans}</div><p class="text-slate-400 text-[10px]">題型：基礎拼寫</p></div>
+            if (isVocab) {
+                content = `<div class="mb-8"><div class="text-indigo-900 font-black text-5xl mb-6">${item.trans}</div><p class="text-slate-400 text-[10px] font-bold">TYPE 1：單字拼寫</p></div>
                            <input type="text" id="ansIn" onkeydown="handleEnter(event)" class="w-full border-b-4 border-indigo-100 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-black" placeholder="..." autocomplete="off">`;
-            } else if (isChoice) { // 5 題選擇：情境四選一
-                const options = generateOptions(item.word);
-                content = `<div class="mb-6"><div class="text-indigo-900 font-bold text-xl mb-6 leading-relaxed">${item.sentence.replace(new RegExp(item.word,'gi'),'____')}</div></div>
-                           <div class="grid grid-cols-1 gap-2">
-                               ${options.map(o => `<button onclick="window.submitChoice('${o}')" class="bg-indigo-50 hover:bg-indigo-600 hover:text-white py-4 rounded-2xl font-bold transition-all">${o}</button>`).join('')}
+            } else if (isChoice) {
+                const opts = generateOptions(item.word);
+                content = `<div class="mb-6"><div class="text-indigo-900 font-bold text-2xl mb-8 leading-relaxed">${item.sentence.replace(new RegExp(item.word,'gi'),'____')}</div><p class="text-slate-400 text-[10px] font-bold">TYPE 2：情境選擇</p></div>
+                           <div class="grid grid-cols-1 gap-3">
+                               ${opts.map(o => `<button onclick="window.submitChoice('${o}')" class="bg-indigo-50 hover:bg-indigo-600 hover:text-white py-5 rounded-2xl font-black transition-all active:scale-95 shadow-sm text-lg">${o}</button>`).join('')}
                            </div>`;
-            } else { // 10 題句型填空：無中文提示
-                content = `<div class="mb-10"><button onclick="window.speak('${item.sentence}')" class="w-20 h-20 bg-slate-800 text-white rounded-full mx-auto mb-6 shadow-xl"><i class="fas fa-volume-up text-2xl"></i></button>
-                           <div class="text-indigo-900 font-bold text-xl leading-relaxed mb-10 px-4">${item.sentence.replace(new RegExp(item.word,'gi'),'______')}</div>
-                           <p class="text-slate-400 text-[10px]">題型：聽力填空 (無中文提示)</p></div>
+            } else {
+                content = `<div class="mb-10"><button onclick="window.speak('${item.sentence}')" class="w-24 h-24 bg-slate-800 text-white rounded-full mx-auto mb-8 shadow-xl active:scale-95"><i class="fas fa-volume-up text-3xl"></i></button>
+                           <div class="text-indigo-900 font-bold text-2xl leading-relaxed mb-10 px-4">${item.sentence.replace(new RegExp(item.word,'gi'),'______')}</div>
+                           <p class="text-slate-400 text-[10px] font-bold">TYPE 3：聽力與句型填空 (不提示中文)</p></div>
                            <input type="text" id="ansIn" onkeydown="handleEnter(event)" class="w-full border-b-4 border-indigo-100 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-black" placeholder="..." autocomplete="off">`;
             }
 
-            card.innerHTML = `<div class="text-slate-300 text-[10px] mb-8 font-bold tracking-[0.2em]">QUESTION ${currentIdx + 1} / 20</div>${content}`;
+            card.innerHTML = `<div class="text-slate-300 text-[10px] mb-8 font-black tracking-[0.4em]">QUESTION ${currentIdx + 1} / 20</div>${content}`;
             if(!isChoice) setTimeout(() => document.getElementById('ansIn').focus(), 400);
             window.speak(isVocab ? item.word : item.sentence);
         }
 
         function generateOptions(correct) {
             let opts = [correct];
-            let pool = db.filter(d => d.word !== correct);
+            let pool = db.filter(d => d.word.toLowerCase() !== correct.toLowerCase());
             while(opts.length < 4 && pool.length > 0) {
                 let r = pool.splice(Math.floor(Math.random()*pool.length), 1)[0].word;
                 if(!opts.includes(r)) opts.push(r);
@@ -273,7 +288,7 @@
 
         function submitAns(val) {
             const correct = currentExam[currentIdx].word.toLowerCase();
-            examResults.push({ word: currentExam[currentIdx].word, user: val.trim() || "(未填)", isCorrect: val.trim().toLowerCase() === correct });
+            examResults.push({ word: currentExam[currentIdx].word, user: val.trim() || "(空)", isCorrect: val.trim().toLowerCase() === correct });
             currentIdx++;
             if (currentIdx < 20) renderExamQuestion(); else finishExam();
         }
@@ -286,13 +301,13 @@
             
             const record = { code, score, date: new Date().toLocaleString(), results: examResults };
             examHistory.push(record);
-            localStorage.setItem('exam_history', JSON.stringify(examHistory));
+            localStorage.setItem('exam_history_s2', JSON.stringify(examHistory));
 
-            document.getElementById('resCode').innerText = code;
+            document.getElementById('resCode').innerText = "EXAM CODE: " + code;
             document.getElementById('scoreDisplay').innerText = score;
             document.getElementById('resultSummary').innerHTML = examResults.map((r,i) => `
-                <div class="flex items-center justify-between p-2 text-xs rounded-xl ${r.isCorrect?'bg-green-50':'bg-red-50'} border border-slate-100">
-                    <span>${i+1}. ${r.word}</span><span class="${r.isCorrect?'text-green-500':'text-red-500'} font-bold">${r.isCorrect?'OK':r.user}</span>
+                <div class="flex items-center justify-between p-3 text-xs rounded-2xl ${r.isCorrect?'bg-green-50 text-green-700 border-green-100':'bg-red-50 text-red-700 border-red-100'} border font-bold mb-1">
+                    <span>${i+1}. ${r.word}</span><span>${r.isCorrect?'✓':r.user}</span>
                 </div>
             `).join('');
             window.switchTab('result');
@@ -302,11 +317,12 @@
         window.speak = (t) => {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(t);
-            u.lang = 'en-US'; u.rate = 0.8;
+            u.lang = 'en-US'; 
+            u.rate = 0.6; // 語速降至 0.6
             window.speechSynthesis.speak(u);
         };
 
-        // --- 工具 ---
+        // --- 輔助工具 ---
         function toggleLoader(s, t="") {
             document.getElementById('idleUI').classList.toggle('hidden', s);
             document.getElementById('loadingUI').classList.toggle('hidden', !s);
@@ -331,24 +347,25 @@
         }
 
         window.switchTab = (name) => {
-            ['listPage','historyPage','quizPage','resultPage','aiSection'].forEach(p => document.getElementById(p).classList.add('hidden'));
+            const pages = ['listPage','historyPage','quizPage','resultPage','aiSection'];
+            pages.forEach(p => document.getElementById(p).classList.add('hidden'));
             if(name === 'list') { document.getElementById('listPage').classList.remove('hidden'); document.getElementById('aiSection').classList.remove('hidden'); }
-            else if(name === 'history') document.getElementById('historyList').parentElement.classList.remove('hidden');
+            else if(name === 'history') document.getElementById('historyPage').classList.remove('hidden');
             else if(name === 'quiz') document.getElementById('quizPage').classList.remove('hidden');
             else if(name === 'result') document.getElementById('resultPage').classList.remove('hidden');
             
             const tabs = ['tabBtnList','tabBtnQuiz','tabBtnHistory'];
-            tabs.forEach(t => document.getElementById(t).className = "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500");
+            tabs.forEach(t => document.getElementById(t).className = "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all");
             const activeTab = name==='list'?'tabBtnList':(name==='quiz'?'tabBtnQuiz':'tabBtnHistory');
-            if(document.getElementById(activeTab)) document.getElementById(activeTab).className = "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600";
+            document.getElementById(activeTab).className = "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600 transition-all";
         };
 
-        window.fullReset = () => { if(confirm("確定清除？")) { localStorage.clear(); location.reload(); } };
+        window.fullReset = () => { if(confirm("確定全部清除？")) { localStorage.clear(); location.reload(); } };
         window.toggleSettings = () => document.getElementById('settingsSection').classList.toggle('hidden');
         window.exportData = () => {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type:'application/json'}));
-            a.download = `exam_db.json`; a.click();
+            a.download = `exam_db_export.json`; a.click();
         };
     </script>
 </body>
