@@ -3,122 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 核心診斷工具</title>
+    <title>Gemini 模型診斷器</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #f9fafb; }
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        body { font-family: 'Noto Sans TC', sans-serif; background: #f3f4f6; }
+        .log-entry { font-family: monospace; font-size: 10px; margin-bottom: 2px; }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4">
 
-    <div class="max-w-md mx-auto space-y-6">
-        <header class="text-center">
-            <h1 class="text-xl font-black text-slate-800 tracking-tighter">Gemini OCR 核心對接</h1>
-            <p class="text-[9px] text-slate-400">VERSION 2026.04.24-ULTRA_LEAN</p>
+    <div class="max-w-md mx-auto space-y-4">
+        <header class="text-center py-4">
+            <h1 class="text-xl font-black text-indigo-700">Gemini 權限診斷工具</h1>
+            <p class="text-[10px] text-gray-400">VERSION 2026.04.24-RECOVERY</p>
         </header>
 
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase">Google API Key</label>
-            <input type="password" id="apiKey" class="w-full p-3 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 mb-4 text-sm" placeholder="AIza...">
-            <button onclick="saveKey()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm">儲存金鑰</button>
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">第一步：輸入 API Key</label>
+            <input type="password" id="apiKey" class="w-full p-3 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 mb-3 text-sm" placeholder="AIza...">
+            <button onclick="fetchAvailableModels()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all">獲取可用模型清單</button>
         </div>
 
-        <div id="scanArea" class="hidden space-y-4">
-            <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-indigo-50 text-center">
-                <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="processImage(event)">
-                <button id="btn" onclick="document.getElementById('fileInput').click()" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto flex items-center justify-center shadow-lg active:scale-90 transition-all">
-                    <i class="fas fa-camera text-3xl"></i>
-                </button>
-                <h2 class="mt-4 font-bold text-slate-700">點擊拍照辨識</h2>
-                <p id="statusTxt" class="text-[10px] text-slate-400 mt-2">支援自動縮圖防爆功能</p>
-            </div>
+        <div id="step2" class="hidden bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">第二步：選擇可用模型</label>
+            <select id="modelPicker" class="w-full p-3 bg-indigo-50 text-indigo-700 rounded-xl outline-none border border-indigo-100 font-bold mb-4"></select>
+            
+            <input type="file" id="fileIn" accept="image/*" class="hidden" onchange="runOcr(event)">
+            <button onclick="document.getElementById('fileIn').click()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all">
+                <i class="fas fa-camera mr-2"></i> 開始拍照辨識
+            </button>
+        </div>
 
-            <div class="bg-slate-900 rounded-2xl p-4 h-64 overflow-y-auto font-mono text-[10px] text-green-400" id="log">
-                [SYSTEM] 等待任務開始...
+        <div class="bg-slate-900 rounded-3xl p-5 shadow-2xl h-80 flex flex-col">
+            <h3 class="text-indigo-400 text-[10px] font-bold mb-2 flex justify-between">
+                <span>系統診斷日誌</span>
+                <button onclick="document.getElementById('log').innerHTML=''" class="text-slate-500">清空</button>
+            </h3>
+            <div id="log" class="flex-1 overflow-y-auto text-green-400 font-mono text-[10px]">
+                [SYSTEM] 等待金鑰輸入...
             </div>
         </div>
     </div>
 
     <script>
-        const log = (msg, isErr = false) => {
+        const sysLog = (msg, color = 'text-green-400') => {
             const div = document.getElementById('log');
-            const entry = document.createElement('div');
-            entry.className = isErr ? 'text-red-400' : 'text-green-400';
-            entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            div.appendChild(entry);
+            const el = document.createElement('div');
+            el.className = `log-entry ${color}`;
+            el.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            div.appendChild(el);
             div.scrollTop = div.scrollHeight;
         };
 
-        window.onload = () => {
-            if(localStorage.getItem('study_key')) {
-                document.getElementById('apiKey').value = localStorage.getItem('study_key');
-                document.getElementById('scanArea').classList.remove('hidden');
-            }
-        };
-
-        function saveKey() {
+        // 1. 抓取該 API Key 真正擁有的模型
+        async function fetchAvailableModels() {
             const key = document.getElementById('apiKey').value.trim();
-            if(!key.startsWith("AIza")) return alert("格式錯誤！");
-            localStorage.setItem('study_key', key);
-            document.getElementById('scanArea').classList.remove('hidden');
-            log("API Key 已更新，系統就緒。");
+            if(!key) return alert("請輸入金鑰！");
+            
+            sysLog("正在向 Google 查詢權限清單...");
+            try {
+                // 嘗試 v1beta 的 ListModels 介面
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                const data = await resp.json();
+
+                if(data.error) throw new Error(data.error.message);
+
+                const picker = document.getElementById('modelPicker');
+                picker.innerHTML = "";
+                
+                // 過濾出支援辨識的模型 (支援 generateContent 的)
+                const validModels = data.models.filter(m => m.supportedGenerationMethods.includes('generateContent'));
+                
+                validModels.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.name; // 名稱格式通常是 models/gemini-1.5-flash
+                    opt.innerText = m.displayName;
+                    picker.appendChild(opt);
+                });
+
+                document.getElementById('step2').classList.remove('hidden');
+                sysLog(`成功！找到 ${validModels.length} 個可用模型。`, 'text-yellow-400');
+                sysLog("請在第二步選擇模型後開始辨識。");
+
+            } catch(e) {
+                sysLog("獲取清單失敗：" + e.message, 'text-red-400');
+            }
         }
 
-        async function processImage(e) {
+        // 2. 執行辨識
+        async function runOcr(e) {
             const file = e.target.files[0];
             if(!file) return;
 
-            const btn = document.getElementById('btn');
-            btn.disabled = true;
-            btn.classList.add('opacity-50');
-            log("正在處理圖片：使用極限縮圖策略...");
+            const key = document.getElementById('apiKey').value.trim();
+            const modelName = document.getElementById('modelPicker').value;
 
+            sysLog(`啟動辨識：使用模型 ${modelName}`);
+            
             try {
-                // 1. 強制縮圖到 800px 寬度 (降低 Token 流量，避開 429)
-                const base64 = await compressImage(file, 800);
-                log("圖片已微縮，正在連線 Google 伺服器...");
+                // 自動縮圖至 800px (極效防爆 429)
+                const base64 = await compress(file, 800);
+                sysLog("圖片已縮壓，正在傳送...");
 
-                const key = localStorage.getItem('study_key');
-                // 2. 使用 v1beta 路由，這是 2026 年最具彈性的介面
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-
-                const response = await fetch(url, {
+                const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${key}`;
+                
+                const resp = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{ text: "只辨識這張英文考卷中的英文單字與中文翻譯，格式：英文 | 中文" },
+                            parts: [{ text: "辨識英文考卷單字與翻譯。格式：英文 | 翻譯" },
                                    { inline_data: { mime_type: "image/jpeg", data: base64.split(',')[1] } }]
                         }]
                     })
                 });
 
-                const data = await response.json();
+                const result = await resp.json();
+                if(result.error) throw new Error(result.error.message);
 
-                if(data.error) {
-                    throw new Error(data.error.message);
-                }
+                const text = result.candidates[0].content.parts[0].text;
+                sysLog("--- 辨識結果 ---", "text-white");
+                sysLog(text, "text-white");
+                alert("辨識成功！結果已顯示在日誌中。");
 
-                const result = data.candidates[0].content.parts[0].text;
-                log("--- 辨識結果 ---");
-                log(result);
-                alert("辨識成功！請看下方日誌。");
-
-            } catch (err) {
-                log("!! 錯誤：" + err.message, true);
-                if(err.message.includes("429")) log("提示：請等待 60 秒後再試，Google 正在冷卻你的 Key。", true);
+            } catch(err) {
+                sysLog("!! 錯誤：" + err.message, 'text-red-400');
             } finally {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50');
                 e.target.value = '';
             }
         }
 
-        function compressImage(file, maxWidth) {
+        function compress(file, maxWidth) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
