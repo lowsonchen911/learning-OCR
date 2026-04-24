@@ -14,7 +14,6 @@
         body { font-family: 'Noto Sans TC', sans-serif; background: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
         .loading-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .quiz-card { transition: all 0.3s ease; }
         .correct-flash { animation: flash 0.6s ease; }
         @keyframes flash { 0% { background: white; } 50% { background: #dcfce7; } 100% { background: white; } }
     </style>
@@ -28,10 +27,10 @@
                     <i class="fas fa-magic mr-2 text-yellow-300"></i>AI 助手
                 </h1>
                 <p id="versionTag" class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
-                    Version: 2026.04.24-06
+                    Version: 2026.04.24-07
                 </p>
             </div>
-            <button onclick="toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all">
+            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all">
                 <i class="fas fa-cog text-xl text-yellow-300"></i>
             </button>
         </div>
@@ -42,18 +41,18 @@
         <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold flex items-center"><i class="fas fa-key mr-2 text-yellow-400"></i>我的 API 設定</h3>
-                <button onclick="toggleSettings()" class="text-slate-400"><i class="fas fa-times"></i></button>
+                <button onclick="window.toggleSettings(false)" class="text-slate-400"><i class="fas fa-times"></i></button>
             </div>
             <div class="space-y-4">
                 <div>
                     <label class="text-[10px] text-slate-400 uppercase font-bold">Google AI Studio API Key</label>
-                    <input type="password" id="apiKeyInput" placeholder="貼上 AIza... 開頭的 Key" 
+                    <input type="password" id="apiKeyInput" placeholder="在此貼上 AIza... 開頭的 Key" 
                            class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mt-1 focus:ring-2 focus:ring-yellow-400 outline-none transition-all">
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="saveSettings()" class="flex-1 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all">儲存並隱藏</button>
-                    <button onclick="exportData()" class="px-4 bg-slate-600 rounded-xl hover:bg-slate-500"><i class="fas fa-download"></i></button>
-                    <button onclick="importData()" class="px-4 bg-slate-600 rounded-xl hover:bg-slate-500"><i class="fas fa-upload"></i></button>
+                    <button onclick="window.saveSettings()" class="flex-1 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all">儲存設定</button>
+                    <button onclick="window.exportData()" class="px-4 bg-slate-600 rounded-xl hover:bg-slate-500" title="備份資料"><i class="fas fa-download"></i></button>
+                    <button onclick="window.importData()" class="px-4 bg-slate-600 rounded-xl hover:bg-slate-500" title="還原資料"><i class="fas fa-upload"></i></button>
                 </div>
             </div>
         </section>
@@ -66,35 +65,31 @@
                     </div>
                     <h2 class="font-bold text-slate-700 text-lg mb-6">新增學習內容</h2>
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="checkKeyBeforeUpload()" class="col-span-2 bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">
-                            <i class="fas fa-expand mr-2 text-yellow-300"></i> 拍考卷辨識
-                        </button>
-                    </div>
+                    <button onclick="window.checkKeyBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-4 active:scale-95 transition-all">
+                        <i class="fas fa-expand mr-2 text-yellow-300"></i> 拍考卷辨識
+                    </button>
                 </div>
 
                 <div id="loadingUI" class="hidden py-10">
                     <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-600 mb-4"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse">AI 正在思考中...</p>
-                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 font-mono">Connecting to Gemini...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse">AI 正在努力翻譯中...</p>
+                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 font-mono italic text-center">Gemini 1.5 Flash Linking...</p>
                 </div>
             </div>
         </section>
 
         <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6 shadow-inner">
-            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">題庫管理</button>
-            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">練習模式</button>
+            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600 transition-all">目前題庫</button>
+            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">測驗練習</button>
         </div>
 
         <section id="listPage">
-            <div id="emptyTip" class="text-center py-20 text-slate-300 hidden font-bold">空空如也，拍張考卷吧！</div>
+            <div id="emptyTip" class="text-center py-20 text-slate-300 hidden font-bold italic">空空如也，拍張考卷吧！</div>
             <div id="itemList" class="space-y-3"></div>
         </section>
 
         <section id="quizPage" class="hidden">
-            <div id="quizCard" class="bg-white rounded-[2.5rem] shadow-2xl p-8 text-center min-h-[450px] flex flex-col justify-center border border-indigo-50 quiz-card">
-                </div>
+            <div id="quizCard" class="bg-white rounded-[2.5rem] shadow-2xl p-8 text-center min-h-[450px] flex flex-col justify-center border border-indigo-50"></div>
         </section>
     </main>
 
@@ -110,7 +105,7 @@
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        let db = JSON.parse(localStorage.getItem('studyDB_vFinal')) || [];
+        let db = JSON.parse(localStorage.getItem('studyDB_final')) || [];
         let currentIdx = 0;
 
         // 初始化
@@ -119,12 +114,12 @@
             if (savedKey) {
                 document.getElementById('apiKeyInput').value = savedKey;
             } else {
-                toggleSettings(true);
+                window.toggleSettings(true);
             }
             window.updateUI();
         };
 
-        // 設定控制
+        // --- 全域函數掛載 (修正 ReferenceError) ---
         window.toggleSettings = (show = null) => {
             const sec = document.getElementById('settingsSection');
             if (show === true) sec.classList.remove('hidden');
@@ -134,78 +129,52 @@
 
         window.saveSettings = () => {
             const key = document.getElementById('apiKeyInput').value.trim();
-            if (!key.startsWith("AIza")) return alert("API Key 格式似乎不對喔！");
+            if (!key.startsWith("AIza")) return alert("格式不對喔！API Key 通常是 AIza 開頭。");
             localStorage.setItem('user_gemini_key', key);
-            alert("API 設定已儲存！");
+            alert("API Key 已成功儲存！");
             window.toggleSettings(false);
         };
 
         window.checkKeyBeforeUpload = () => {
             const key = localStorage.getItem('user_gemini_key');
             if (!key) {
-                alert("請先設定 API Key！");
+                alert("請先點擊右上角齒輪設定 API Key！");
                 window.toggleSettings(true);
             } else {
                 document.getElementById('cameraInput').click();
             }
         };
 
-        // AI 處理邏輯
         window.handleAiUpload = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             const apiKey = localStorage.getItem('user_gemini_key');
             toggleLoading(true);
-            const status = document.getElementById('debugStatus');
 
             try {
                 const base64 = await toBase64(file);
                 const genAI = new GoogleGenerativeAI(apiKey);
-                
-                // 使用最新穩定的 ID，並針對可能的 404 做處理
-                status.innerText = "Model: gemini-1.5-flash...";
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-                const prompt = "這是一張小學三年級英文考卷，請精確辨識其中的英文單字與英文句子，並翻譯成繁體中文。請只輸出格式：英文 | 繁體中文，每行一題，不要有其他廢話。";
-                
+                const prompt = "這是一張小學三年級英文考卷，請辨識單字與句子並翻譯成繁體中文。格式：英文 | 繁體中文，每行一題。";
                 const result = await model.generateContent([
                     prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
                 ]);
 
-                const text = result.response.text();
-                processResponse(text);
-                alert("辨識成功！題目已加入。");
+                processResponse(result.response.text());
+                alert("辨識成功！");
             } catch (err) {
                 console.error(err);
-                if (err.message.includes("not found")) {
-                    alert("AI 模型連線失敗 (404)。請確認您的 API Key 是否具備 Gemini 1.5 Flash 權限。");
-                } else {
-                    alert("AI 辨識發生錯誤: " + err.message);
-                }
+                alert("AI 辨識發生錯誤: " + err.message);
             } finally {
                 toggleLoading(false);
                 e.target.value = '';
             }
         };
 
-        function processResponse(text) {
-            const lines = text.split('\n');
-            lines.forEach(line => {
-                if (line.includes('|')) {
-                    let [word, trans] = line.split('|').map(s => s.trim());
-                    // 清理雜訊
-                    word = word.replace(/^[0-9]+[\.\s]*/, '').replace(/^\(\s*\)/, '');
-                    if (word && trans) {
-                        db.push({ id: Date.now() + Math.random(), word, trans });
-                    }
-                }
-            });
-            window.saveDB();
-        }
-
         window.saveDB = () => {
-            localStorage.setItem('studyDB_vFinal', JSON.stringify(db));
+            localStorage.setItem('studyDB_final', JSON.stringify(db));
             window.updateUI();
         };
 
@@ -235,3 +204,106 @@
                 window.saveDB();
             }
         };
+
+        window.speak = (t) => {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(t);
+            u.lang = 'en-US'; u.rate = 0.8;
+            window.speechSynthesis.speak(u);
+        };
+
+        window.switchTab = (name) => {
+            document.getElementById('listPage').classList.toggle('hidden', name !== 'list');
+            document.getElementById('quizPage').classList.toggle('hidden', name !== 'quiz');
+            document.getElementById('aiSection').classList.toggle('hidden', name === 'quiz');
+            
+            const btnList = document.getElementById('tabBtnList');
+            const btnQuiz = document.getElementById('tabBtnQuiz');
+            btnList.className = name === 'list' ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+            btnQuiz.className = name === 'quiz' ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+        };
+
+        window.startQuiz = () => {
+            if (db.length === 0) return alert("題庫沒單字喔！");
+            currentIdx = 0; window.switchTab('quiz'); renderQuiz();
+        };
+
+        function renderQuiz() {
+            const item = db[currentIdx];
+            const card = document.getElementById('quizCard');
+            card.innerHTML = `
+                <div class="text-slate-300 text-[10px] mb-8 font-bold uppercase tracking-widest tracking-tighter">Progress ${currentIdx + 1} / ${db.length}</div>
+                <button onclick="window.speak('${item.word}')" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl active:scale-95 transition-all"><i class="fas fa-volume-up text-3xl"></i></button>
+                <div class="text-indigo-400 font-bold mb-8 text-xl">${item.trans}</div>
+                <input type="text" id="ansIn" class="w-full border-b-2 border-slate-200 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-bold" placeholder="..." autocomplete="off">
+                <button onclick="window.checkAns()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-xl shadow-lg active:scale-95 transition-all">檢查答案</button>
+            `;
+            window.speak(item.word);
+            setTimeout(() => document.getElementById('ansIn').focus(), 400);
+        }
+
+        window.checkAns = () => {
+            const input = document.getElementById('ansIn');
+            const user = input.value.trim().toLowerCase().replace(/[.?!,]/g, '');
+            const correct = db[currentIdx].word.trim().toLowerCase().replace(/[.?!,]/g, '');
+            if (user === correct) {
+                currentIdx++;
+                if (currentIdx < db.length) renderQuiz();
+                else { alert("🎉 全數練習完成！你真棒！"); window.switchTab('list'); }
+            } else {
+                alert(`正確答案是：${db[currentIdx].word}`);
+                window.speak(db[currentIdx].word);
+            }
+        };
+
+        function toBase64(file) {
+            return new Promise((r, j) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => r(reader.result);
+                reader.onerror = e => j(e);
+            });
+        }
+
+        function toggleLoading(s) {
+            document.getElementById('idleUI').classList.toggle('hidden', s);
+            document.getElementById('loadingUI').classList.toggle('hidden', !s);
+        }
+
+        function processResponse(text) {
+            text.split('\n').forEach(line => {
+                if (line.includes('|')) {
+                    let [word, trans] = line.split('|').map(s => s.trim());
+                    word = word.replace(/^[0-9]+[\.\s]*/, ''); 
+                    if (word && trans) db.push({ id: Date.now() + Math.random(), word, trans });
+                }
+            });
+            window.saveDB();
+        }
+
+        window.exportData = () => {
+            const blob = new Blob([JSON.stringify(db)], {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url;
+            a.download = `english_study_data_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+        };
+
+        window.importData = () => {
+            const i = document.createElement('input'); i.type = 'file'; i.accept = '.json';
+            i.onchange = e => {
+                const reader = new FileReader();
+                reader.onload = ev => { 
+                    try {
+                        db = JSON.parse(ev.target.result); 
+                        window.saveDB(); 
+                        alert("還原成功！");
+                    } catch(e) { alert("讀取失敗，請檢查檔案格式。"); }
+                };
+                reader.readAsText(e.target.files[0]);
+            };
+            i.click();
+        };
+    </script>
+</body>
+</html>
