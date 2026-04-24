@@ -7,19 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="importmap">
-      {
-        "imports": {
-          "@google/generative-ai": "https://esm.run/@google/generative-ai"
-        }
-      }
+      { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background: #f0f7ff; }
         .loading-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .correct-flash { animation: flash 0.6s ease; }
-        @keyframes flash { 0% { background: white; } 50% { background: #dcfce7; } 100% { background: white; } }
     </style>
 </head>
 <body class="pb-28">
@@ -30,7 +24,9 @@
                 <h1 class="text-2xl font-black italic flex items-center">
                     <i class="fas fa-robot mr-2 text-yellow-300"></i>AI 英文助手
                 </h1>
-                <p class="text-[10px] text-indigo-200 font-bold uppercase">2026 Premium Stable</p>
+                <p class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
+                    Version: 2026.04.24-01 (Smart Model)
+                </p>
             </div>
             <div class="flex gap-2">
                 <button onclick="exportData()" class="text-[10px] bg-indigo-500 px-3 py-1 rounded-full border border-indigo-400">備份</button>
@@ -47,7 +43,7 @@
                     <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-camera text-3xl"></i>
                     </div>
-                    <h2 class="font-bold text-slate-700 text-lg">考卷自動辨識</h2>
+                    <h2 class="font-bold text-slate-700 text-lg">拍照辨識考卷</h2>
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="handleAiUpload(event)">
                     <button onclick="document.getElementById('cameraInput').click()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-4 active:scale-95 transition-all">
                         <i class="fas fa-magic mr-2 text-yellow-300"></i> 開始拍照辨識
@@ -57,7 +53,7 @@
                 <div id="loadingUI" class="hidden py-10">
                     <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-500 mb-4"></i>
                     <p class="text-indigo-600 font-bold animate-pulse">AI 正在讀取翻譯中...</p>
-                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2">準備連線...</p>
+                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 italic">準備連線...</p>
                 </div>
             </div>
         </section>
@@ -98,11 +94,12 @@
         let db = JSON.parse(localStorage.getItem('studyDB_vFinal')) || [];
         let currentIdx = 0;
 
-        // 將函數掛載到 window，解決 type="module" 導致的 ReferenceError
+        // 2026 年可能的模型 ID 清單
+        const MODELS = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-2.0-flash"];
+
         window.handleAiUpload = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            console.log("檔案已選擇:", file.name);
 
             if (!API_KEY || API_KEY.includes("貼上")) {
                 alert("錯誤：尚未設定 API Key！");
@@ -110,49 +107,65 @@
             }
 
             toggleLoading(true);
-            const status = document.getElementById('debugStatus');
+            const statusLabel = document.getElementById('debugStatus');
             
             try {
-                status.innerText = "正在轉換圖片格式...";
                 const base64 = await toBase64(file);
-                
-                status.innerText = "連線至 Google AI 伺服器...";
                 const genAI = new GoogleGenerativeAI(API_KEY);
                 
-                // 優先使用 1.5 Flash，這是目前最穩定的 API 名稱
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                let success = false;
+                let lastError = "";
 
-                const prompt = "這是一張小三英文考卷，請辨識其中的單字與句子並翻譯成繁體中文。請只輸出格式：單字 | 翻譯";
-                
-                const result = await model.generateContent([
-                    prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
-                ]);
+                // 智慧探測迴圈
+                for (let modelName of MODELS) {
+                    try {
+                        statusLabel.innerText = `正在嘗試連線模型: ${modelName}...`;
+                        const model = genAI.getGenerativeModel({ model: modelName });
+                        const prompt = "這是一張小三英文考卷，請辨識其中的單字與句子並翻譯成繁體中文。請只輸出格式：單字 | 翻譯";
+                        
+                        const result = await model.generateContent([
+                            prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
+                        ]);
 
-                const text = result.response.text();
-                console.log("AI 回傳原始文字:", text);
-
-                text.split('\n').forEach(line => {
-                    if (line.includes('|')) {
-                        let [word, trans] = line.split('|').map(s => s.trim());
-                        word = word.replace(/^[0-9]+[\.\s]*/, ''); 
-                        if (word && trans) db.push({ id: Date.now() + Math.random(), word, trans });
+                        const text = result.response.text();
+                        processResponse(text);
+                        success = true;
+                        console.log(`成功連線至: ${modelName}`);
+                        break; 
+                    } catch (mErr) {
+                        console.warn(`${modelName} 失敗: ${mErr.message}`);
+                        lastError = mErr.message;
                     }
-                });
-                
-                saveDB();
-                alert("辨識成功！題目已加入題庫。");
+                }
+
+                if (success) {
+                    alert("辨識成功！題目已加入題庫。");
+                } else {
+                    alert("所有模型連線失敗，請檢查 API Key 權限。\n最後錯誤: " + lastError);
+                }
+
             } catch (err) {
-                console.error("AI 辨識過程發生錯誤:", err);
-                alert("辨識失敗！詳細原因：\n" + err.message);
+                alert("執行過程發生錯誤: " + err.message);
             } finally {
                 toggleLoading(false);
-                e.target.value = ''; // 清除 input 讓下次可以選同張圖
+                e.target.value = '';
             }
         };
 
+        function processResponse(text) {
+            text.split('\n').forEach(line => {
+                if (line.includes('|')) {
+                    let [word, trans] = line.split('|').map(s => s.trim());
+                    word = word.replace(/^[0-9]+[\.\s]*/, ''); 
+                    if (word && trans) db.push({ id: Date.now() + Math.random(), word, trans });
+                }
+            });
+            window.saveDB();
+        }
+
         window.saveDB = () => {
             localStorage.setItem('studyDB_vFinal', JSON.stringify(db));
-            updateUI();
+            window.updateUI();
         };
 
         window.updateUI = () => {
@@ -205,7 +218,7 @@
                 <button onclick="window.speak('${item.word}')" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl"><i class="fas fa-volume-up text-3xl"></i></button>
                 <div class="text-indigo-400 font-bold mb-8 text-xl">${item.trans}</div>
                 <input type="text" id="ansIn" class="w-full border-b-2 border-slate-200 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-bold" placeholder="..." autocomplete="off">
-                <button onclick="window.checkAns()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-xl shadow-lg">檢查答案</button>
+                <button onclick="window.checkAns()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-xl">檢查答案</button>
             `;
             window.speak(item.word);
             setTimeout(() => document.getElementById('ansIn').focus(), 400);
@@ -217,7 +230,7 @@
             if (user === correct) {
                 currentIdx++;
                 if (currentIdx < db.length) renderQuiz();
-                else { alert("🎉 全數練習完成！你好棒！"); window.switchTab('list'); }
+                else { alert("🎉 全數完成！"); window.switchTab('list'); }
             } else {
                 alert(`正確答案是：${db[currentIdx].word}`);
                 window.speak(db[currentIdx].word);
