@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小三英文 AI 助手</title>
+    <title>小三英文 AI 助手 V2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -22,186 +22,127 @@
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
                 <h1 class="text-2xl font-black italic flex items-center">
-                    <i class="fas fa-brain mr-2 text-yellow-300"></i>AI 英文助手
+                    <i class="fas fa-rocket mr-2 text-yellow-300"></i>AI 助手 V2
                 </h1>
-                <p id="versionTag" class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
-                    Version: 2026.04.24-Final
-                </p>
+                <p class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">Version: 2026.04.24-V2 (Context Quiz)</p>
             </div>
-            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all">
-                <i class="fas fa-cog text-xl text-yellow-300"></i>
-            </button>
+            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full"><i class="fas fa-cog text-xl text-yellow-300"></i></button>
         </div>
     </header>
 
     <main class="p-4 max-w-2xl mx-auto">
         
-        <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl transition-all">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold flex items-center"><i class="fas fa-key mr-2 text-yellow-400"></i> API 管理</h3>
-                <button onclick="window.toggleSettings(false)" class="text-slate-400"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <input type="password" id="apiKeyInput" placeholder="在此貼入新 Key (AIza...)" 
-                   class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mt-1 mb-4 focus:ring-2 focus:ring-yellow-400 outline-none text-white">
+        <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
+            <h3 class="font-bold flex items-center mb-4"><i class="fas fa-key mr-2 text-yellow-400"></i> API 管理</h3>
+            <input type="password" id="apiKeyInput" placeholder="在此貼入 API Key" class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mb-4 outline-none text-white">
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="window.saveSettings()" class="col-span-2 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold hover:bg-yellow-400">儲存金鑰</button>
-                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs border border-slate-600">備份題庫</button>
-                <button onclick="window.importData()" class="bg-slate-700 py-2 rounded-xl text-xs border border-slate-600">還原題庫</button>
+                <button onclick="window.saveSettings()" class="col-span-2 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold">儲存設定</button>
+                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs">備份題庫</button>
+                <button onclick="window.fullReset()" class="bg-red-500/20 text-red-400 py-2 rounded-xl text-xs">清空全部</button>
             </div>
         </section>
 
         <section id="aiSection" class="mb-6">
             <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200 text-center">
                 <div id="idleUI">
-                    <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-camera text-3xl"></i>
-                    </div>
-                    <h2 class="font-bold text-slate-700 text-lg mb-6">辨識考卷單字</h2>
+                    <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fas fa-camera text-3xl"></i></div>
+                    <h2 class="font-bold text-slate-700 text-lg mb-6">掃瞄並生成情境題</h2>
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
-                    <button id="mainScanBtn" onclick="window.checkBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg transition-all active:scale-95">
-                        <i class="fas fa-magic mr-2 text-yellow-300"></i> <span id="btnText">開始拍照匯入</span>
+                    <button id="mainScanBtn" onclick="window.checkBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">
+                        <i class="fas fa-magic mr-2 text-yellow-300"></i> 開始 AI 辨識
                     </button>
-                    <p id="quotaTip" class="text-[10px] text-red-500 mt-3 hidden italic font-bold">⚠️ API 冷卻中，請等待倒數...</p>
-                    <div id="modelBadge" class="mt-4 text-[10px] text-slate-400 uppercase font-bold">已就緒</div>
+                    <p id="quotaTip" class="text-[10px] text-red-500 mt-3 hidden font-bold italic">配額保護中，請稍候...</p>
                 </div>
 
                 <div id="loadingUI" class="hidden py-10">
                     <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-600 mb-4"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse text-lg">AI 正在努力翻譯中...</p>
-                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 font-mono">Initializing Gemini...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse text-lg">AI 正在造句中...</p>
                 </div>
             </div>
         </section>
 
-        <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6 shadow-inner">
-            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600 transition-all">目前題庫</button>
-            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">測驗模式</button>
+        <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6">
+            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">題庫單字</button>
+            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">情境測驗</button>
         </div>
 
         <section id="listPage">
-            <div id="emptyTip" class="text-center py-20 text-slate-300 hidden font-bold italic">目前沒有題目喔！快去拍照。</div>
             <div id="itemList" class="space-y-3"></div>
         </section>
 
         <section id="quizPage" class="hidden">
-            <div id="quizCard" class="bg-white rounded-[3rem] shadow-2xl p-8 text-center min-h-[480px] flex flex-col justify-center border border-indigo-50"></div>
+            <div id="quizCard" class="bg-white rounded-[3rem] shadow-2xl p-8 text-center min-h-[500px] flex flex-col justify-center border border-indigo-50"></div>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-lg border-t flex justify-around p-5 shadow-lg z-40">
-        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600"><i class="fas fa-th-large text-xl"></i><span class="text-[10px] mt-1 font-bold">列表</span></button>
-        <button onclick="window.startQuiz()" class="flex flex-col items-center text-slate-400"><i class="fas fa-play text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span></button>
-    </nav>
-
     <script type="module">
-        // 本地資料儲存
-        let db = JSON.parse(localStorage.getItem('studyDB_final')) || [];
-        let lastRequestTimestamp = parseInt(localStorage.getItem('last_api_request_time')) || 0;
-        let activeModelName = "";
+        let db = JSON.parse(localStorage.getItem('studyDB_v2')) || [];
+        let lastRequestTime = parseInt(localStorage.getItem('last_req_v2')) || 0;
+        let activeModel = "models/gemini-1.5-flash";
 
-        // 初始化
         window.onload = async () => {
-            const savedKey = localStorage.getItem('user_gemini_key');
-            if (savedKey) {
-                document.getElementById('apiKeyInput').value = savedKey;
-                await detectModel(savedKey);
-            } else {
-                window.toggleSettings(true);
-            }
-            window.updateUI();
-            checkAndResumeCooldown();
+            const key = localStorage.getItem('user_key_v2');
+            if (key) {
+                document.getElementById('apiKeyInput').value = key;
+                detectModel(key);
+            } else window.toggleSettings(true);
+            updateUI();
+            checkCooldown();
         };
 
-        // --- 全域函數掛載 ---
-        window.toggleSettings = (show = null) => {
-            const sec = document.getElementById('settingsSection');
-            if (show === true) sec.classList.remove('hidden');
-            else if (show === false) sec.classList.add('hidden');
-            else sec.classList.toggle('hidden');
-        };
-
-        window.saveSettings = async () => {
-            const key = document.getElementById('apiKeyInput').value.trim();
-            if (!key.startsWith("AIza")) return alert("金鑰格式錯誤。");
-            localStorage.setItem('user_gemini_key', key);
-            await detectModel(key);
-            alert("設定儲存成功！");
-            window.toggleSettings(false);
-        };
-
-        // 自動偵測可用模型路徑 (解決 404)
         async function detectModel(key) {
-            const badge = document.getElementById('modelBadge');
             try {
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-                const data = await resp.json();
-                if (data.models) {
-                    const bestModel = data.models.find(m => m.name.includes('1.5-flash')) || data.models.find(m => m.name.includes('flash'));
-                    activeModelName = bestModel ? bestModel.name : "models/gemini-1.5-flash";
-                    badge.innerText = `已對接：${bestModel ? bestModel.displayName : 'Gemini 1.5'}`;
-                    return true;
-                }
-            } catch (e) {
-                badge.innerText = "連線失敗";
-            }
-            return false;
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                const d = await r.json();
+                const m = d.models.find(i => i.name.includes('1.5-flash'));
+                if(m) activeModel = m.name;
+            } catch(e) {}
         }
 
+        window.saveSettings = () => {
+            const k = document.getElementById('apiKeyInput').value.trim();
+            localStorage.setItem('user_key_v2', k);
+            alert("設定已儲存！");
+            location.reload();
+        };
+
         window.checkBeforeUpload = () => {
-            const now = Date.now();
-            if (now - lastRequestTimestamp < 40000) {
-                alert(`配額冷卻中，請再等幾秒。`);
-                return;
-            }
-            if (!localStorage.getItem('user_gemini_key')) {
-                alert("請先設定 API 金鑰。");
-                window.toggleSettings(true);
-            } else {
-                document.getElementById('cameraInput').click();
-            }
+            if (Date.now() - lastRequestTime < 40000) return alert("請再等幾秒，AI 需要休息。");
+            document.getElementById('cameraInput').click();
         };
 
         window.handleAiUpload = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            toggleLoader(true, "Compressing Image...");
-            const apiKey = localStorage.getItem('user_gemini_key');
+            toggleLoader(true);
+            const key = localStorage.getItem('user_key_v2');
             
             try {
-                // 1. 圖片壓縮 (極效防 429)
                 const base64 = await compressImage(file, 800);
-                
-                // 2. 準備連線
-                toggleLoader(true, "AI Analyzing...");
-                const url = `https://generativelanguage.googleapis.com/v1beta/${activeModelName}:generateContent?key=${apiKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${key}`;
                 
                 const resp = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{ text: "辨識英文考卷單字。輸出格式：英文 | 翻譯" },
+                            parts: [{ text: "辨識圖片中的英文單字。請過濾掉所有非英文單字的雜訊(如題號、括號)。針對每個單字，請提供：單字 | 繁體中文翻譯 | 一句適合國小程度的簡單英文例句。每行一組。" },
                                    { inline_data: { mime_type: "image/jpeg", data: base64.split(',')[1] } }]
                         }]
                     })
                 });
 
-                const result = await resp.json();
-                if (result.error) throw new Error(result.error.message);
-
-                const aiText = result.candidates[0].content.parts[0].text;
-                processResponse(aiText);
+                const data = await resp.json();
+                processResponse(data.candidates[0].content.parts[0].text);
                 
-                alert("辨識成功！題目已加入題庫。");
-                lastRequestTimestamp = Date.now();
-                localStorage.setItem('last_api_request_time', lastRequestTimestamp);
+                lastRequestTime = Date.now();
+                localStorage.setItem('last_req_v2', lastRequestTime);
                 startCooldown(45);
+                alert("辨識成功！情境例句已生成。");
             } catch (err) {
-                console.error(err);
-                if(err.message.includes("429")) alert("連線太快了，請等一分鐘再試。");
-                else alert("辨識發生錯誤：" + err.message);
+                alert("辨識失敗，請檢查 Key 或等待冷卻。");
             } finally {
                 toggleLoader(false);
                 e.target.value = '';
@@ -211,59 +152,41 @@
         function processResponse(text) {
             text.split('\n').forEach(line => {
                 if (line.includes('|')) {
-                    let [word, trans] = line.split('|').map(s => s.trim());
-                    word = word.replace(/^[0-9]+[\.\s]*/, '').replace(/^\(\s*\)/, '');
-                    if (word && trans) db.push({ id: Date.now() + Math.random(), word, trans });
+                    let parts = line.split('|').map(s => s.trim());
+                    if (parts.length >= 3) {
+                        let word = parts[0].replace(/[^a-zA-Z]/g, ''); // 強制只留英文字母
+                        db.push({ id: Date.now() + Math.random(), word, trans: parts[1], sentence: parts[2] });
+                    }
                 }
             });
-            window.saveDB();
+            saveDB();
         }
 
         window.saveDB = () => {
-            localStorage.setItem('studyDB_final', JSON.stringify(db));
-            window.updateUI();
+            localStorage.setItem('studyDB_v2', JSON.stringify(db));
+            updateUI();
         };
 
-        window.updateUI = () => {
+        function updateUI() {
             const list = document.getElementById('itemList');
-            const tip = document.getElementById('emptyTip');
-            if(tip) tip.classList.toggle('hidden', db.length > 0);
-            if(list) {
-                list.innerHTML = db.slice().reverse().map(item => `
-                    <div class="bg-white p-5 rounded-3xl shadow-sm flex justify-between items-center mb-2 border border-slate-100">
-                        <div onclick="window.speak('${item.word}')" class="cursor-pointer flex-1">
-                            <div class="font-bold text-indigo-900 text-lg">${item.word}</div>
-                            <div class="text-xs text-slate-400 font-medium">${item.trans}</div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="window.speak('${item.word}')" class="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center active:scale-90 transition-transform"><i class="fas fa-volume-up text-sm"></i></button>
-                            <button onclick="window.deleteItem(${item.id})" class="w-10 h-10 text-slate-200 hover:text-red-400 p-2"><i class="fas fa-trash-alt"></i></button>
-                        </div>
+            list.innerHTML = db.slice().reverse().map(item => `
+                <div class="bg-white p-5 rounded-3xl shadow-sm flex justify-between items-center mb-2 border border-slate-100">
+                    <div onclick="window.speak('${item.word}')" class="flex-1 cursor-pointer">
+                        <div class="font-bold text-indigo-900 text-lg">${item.word}</div>
+                        <div class="text-[10px] text-slate-400 font-medium">${item.trans}</div>
+                        <div class="text-[10px] text-indigo-400 italic mt-1">${item.sentence}</div>
                     </div>
-                `).join('');
-            }
-        };
+                    <button onclick="window.deleteItem(${item.id})" class="text-slate-200 p-2"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `).join('');
+        }
 
         window.deleteItem = (id) => {
-            if(confirm("確定要刪除這筆單字嗎？")) {
-                db = db.filter(i => i.id !== id);
-                window.saveDB();
-            }
+            if(confirm("刪除？")) { db = db.filter(i => i.id !== id); window.saveDB(); }
         };
 
-        window.switchTab = (name) => {
-            document.getElementById('listPage').classList.toggle('hidden', name !== 'list');
-            document.getElementById('quizPage').classList.toggle('hidden', name !== 'quiz');
-            document.getElementById('aiSection').classList.toggle('hidden', name === 'quiz');
-            
-            const isList = name === 'list';
-            document.getElementById('tabBtnList').className = isList ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600 transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all";
-            document.getElementById('tabBtnQuiz').className = !isList ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600 transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all";
-        };
-
-        // --- 測驗模組 ---
         window.startQuiz = () => {
-            if (db.length === 0) return alert("題庫沒單字。");
+            if (db.length === 0) return alert("題庫是空的。");
             renderQuiz(0);
             window.switchTab('quiz');
         };
@@ -271,43 +194,54 @@
         function renderQuiz(idx) {
             const item = db[idx];
             const card = document.getElementById('quizCard');
+            // 將句子中的目標單字挖空
+            const displaySentence = item.sentence.replace(new RegExp(item.word, 'gi'), '______');
+            
             card.innerHTML = `
                 <div class="text-slate-300 text-[10px] mb-8 font-bold uppercase tracking-widest">Question ${idx + 1} / ${db.length}</div>
                 <div class="mb-10">
-                    <button onclick="window.speak('${item.word}')" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl active:scale-95 transition-all">
-                        <i class="fas fa-volume-up text-3xl"></i>
+                    <button onclick="window.speak('${item.sentence}')" class="w-20 h-20 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl">
+                        <i class="fas fa-volume-up text-2xl"></i>
                     </button>
-                    <div class="text-indigo-500 font-bold text-2xl tracking-tight">${item.trans}</div>
+                    <div class="text-slate-400 text-xs mb-2">請根據句子填入正確單字：</div>
+                    <div class="text-indigo-900 font-bold text-xl leading-relaxed px-4 mb-4">${displaySentence}</div>
+                    <div class="text-indigo-400 text-sm font-medium">(${item.trans})</div>
                 </div>
-                <input type="text" id="ansIn" class="w-full border-b-4 border-indigo-100 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-bold" placeholder="拼拼看？" autocomplete="off">
-                <button onclick="window.checkAns(${idx})" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold text-xl shadow-lg active:scale-95 transition-all">檢查答案</button>
+                <input type="text" id="ansIn" class="w-full border-b-4 border-indigo-100 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-bold" placeholder="ANSWER" autocomplete="off">
+                <button onclick="window.checkAns(${idx})" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold text-xl shadow-lg">檢查答案</button>
             `;
-            window.speak(item.word);
+            window.speak(item.sentence);
             setTimeout(() => document.getElementById('ansIn').focus(), 400);
         }
 
         window.checkAns = (idx) => {
-            const input = document.getElementById('ansIn');
-            const user = input.value.trim().toLowerCase().replace(/[.?!,]/g, '');
-            const correct = db[idx].word.trim().toLowerCase().replace(/[.?!,]/g, '');
+            const user = document.getElementById('ansIn').value.trim().toLowerCase();
+            const correct = db[idx].word.toLowerCase();
             if (user === correct) {
                 document.getElementById('quizCard').classList.add('correct-flash');
                 setTimeout(() => {
                     document.getElementById('quizCard').classList.remove('correct-flash');
                     if (idx + 1 < db.length) renderQuiz(idx + 1);
-                    else { alert("🎉 全數完成！你真棒！"); window.switchTab('list'); }
+                    else { alert("🎉 你太棒了！全部完成！"); window.switchTab('list'); }
                 }, 600);
             } else {
-                alert(`喔喔！正確答案是：${db[idx].word}`);
+                alert(`喔喔！答案是：${db[idx].word}`);
                 window.speak(db[idx].word);
             }
         };
 
+        window.speak = (t) => {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(t);
+            u.lang = 'en-US'; 
+            u.rate = 0.8; // 語音速度 0.8 倍
+            window.speechSynthesis.speak(u);
+        };
+
         // --- 工具集 ---
-        function toggleLoader(s, status = "") {
+        function toggleLoader(s) {
             document.getElementById('idleUI').classList.toggle('hidden', s);
             document.getElementById('loadingUI').classList.toggle('hidden', !s);
-            if(status) document.getElementById('debugStatus').innerText = status;
         }
 
         function compressImage(file, maxWidth) {
@@ -335,7 +269,6 @@
             const txt = document.getElementById('btnText');
             const tip = document.getElementById('quotaTip');
             btn.classList.add('btn-disabled');
-            btn.disabled = true;
             tip.classList.remove('hidden');
             let sec = duration;
             const timer = setInterval(() => {
@@ -343,41 +276,27 @@
                 if (sec < 0) {
                     clearInterval(timer);
                     btn.classList.remove('btn-disabled');
-                    btn.disabled = false;
                     tip.classList.add('hidden');
-                    txt.innerText = "開始拍照匯入";
+                    txt.innerText = "開始 AI 辨識";
                 }
             }, 1000);
         }
 
-        function checkAndResumeCooldown() {
-            const diff = Date.now() - lastRequestTimestamp;
+        window.switchTab = (name) => {
+            document.getElementById('listPage').classList.toggle('hidden', name !== 'list');
+            document.getElementById('quizPage').classList.toggle('hidden', name !== 'quiz');
+            document.getElementById('aiSection').classList.toggle('hidden', name === 'quiz');
+            const isList = name === 'list';
+            document.getElementById('tabBtnList').className = isList ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+            document.getElementById('tabBtnQuiz').className = !isList ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+        };
+
+        window.fullReset = () => { if(confirm("確定清空？")) { localStorage.clear(); location.reload(); } };
+        window.toggleSettings = () => document.getElementById('settingsSection').classList.toggle('hidden');
+        function checkCooldown() {
+            const diff = Date.now() - lastRequestTime;
             if (diff < 40000) startCooldown(Math.ceil((40000 - diff) / 1000));
         }
-
-        window.speak = (t) => {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(t);
-            u.lang = 'en-US'; u.rate = 0.8;
-            window.speechSynthesis.speak(u);
-        };
-
-        window.exportData = () => {
-            const b = new Blob([JSON.stringify(db)], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-            a.download = `backup_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-        };
-
-        window.importData = () => {
-            const i = document.createElement('input'); i.type = 'file'; i.accept = '.json';
-            i.onchange = e => {
-                const reader = new FileReader();
-                reader.onload = ev => { try { db = JSON.parse(ev.target.result); window.saveDB(); alert("還原成功！"); } catch(e) { alert("讀取失敗。"); } };
-                reader.readAsText(e.target.files[0]);
-            };
-            i.click();
-        };
     </script>
 </body>
 </html>
