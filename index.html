@@ -25,18 +25,17 @@
                     <i class="fas fa-robot mr-2 text-yellow-300"></i>AI 英文助手
                 </h1>
                 <p class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
-                    Version: 2026.04.24-01 (Smart Model)
+                    Version: 2026.04.24-02 (Quota Optimized)
                 </p>
             </div>
             <div class="flex gap-2">
-                <button onclick="exportData()" class="text-[10px] bg-indigo-500 px-3 py-1 rounded-full border border-indigo-400">備份</button>
-                <button onclick="importData()" class="text-[10px] bg-indigo-500 px-3 py-1 rounded-full border border-indigo-400">還原</button>
+                <button onclick="window.exportData()" class="text-[10px] bg-indigo-500 px-3 py-1 rounded-full border border-indigo-400">備份</button>
+                <button onclick="window.importData()" class="text-[10px] bg-indigo-500 px-3 py-1 rounded-full border border-indigo-400">還原</button>
             </div>
         </div>
     </header>
 
     <main class="p-4 max-w-2xl mx-auto">
-        
         <section id="aiSection" class="mb-6">
             <div class="bg-white rounded-[2.5rem] p-8 shadow-lg border-2 border-indigo-50 text-center">
                 <div id="idleUI">
@@ -44,23 +43,22 @@
                         <i class="fas fa-camera text-3xl"></i>
                     </div>
                     <h2 class="font-bold text-slate-700 text-lg">拍照辨識考卷</h2>
-                    <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="handleAiUpload(event)">
+                    <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
                     <button onclick="document.getElementById('cameraInput').click()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-4 active:scale-95 transition-all">
                         <i class="fas fa-magic mr-2 text-yellow-300"></i> 開始拍照辨識
                     </button>
                 </div>
-
                 <div id="loadingUI" class="hidden py-10">
                     <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-500 mb-4"></i>
                     <p class="text-indigo-600 font-bold animate-pulse">AI 正在讀取翻譯中...</p>
-                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 italic">準備連線...</p>
+                    <p class="text-[10px] text-slate-400 mt-2 italic">使用模型: Gemini 2.0 Flash</p>
                 </div>
             </div>
         </section>
 
         <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6">
-            <button onclick="switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">目前題庫</button>
-            <button onclick="startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">測驗模式</button>
+            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">目前題庫</button>
+            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">測驗模式</button>
         </div>
 
         <section id="listPage">
@@ -71,81 +69,48 @@
         <section id="quizPage" class="hidden">
             <div id="quizCard" class="bg-white rounded-[2.5rem] shadow-2xl p-8 text-center min-h-[450px] flex flex-col justify-center border border-indigo-50"></div>
         </section>
-
     </main>
 
     <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-lg border-t flex justify-around p-5 shadow-lg z-40">
-        <button onclick="switchTab('list')" class="flex flex-col items-center text-indigo-600">
+        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600">
             <i class="fas fa-th-large text-xl"></i><span class="text-[10px] mt-1 font-bold">管理</span>
         </button>
-        <button onclick="startQuiz()" class="flex flex-col items-center text-slate-400">
+        <button onclick="window.startQuiz()" class="flex flex-col items-center text-slate-400">
             <i class="fas fa-play-circle text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span>
         </button>
     </nav>
 
     <script type="module">
-        // ==========================================
-        // 核心設定：請在此貼上你的 API Key
-        // ==========================================
-        const API_KEY = "AIzaSyAG8ZRv5S2nddcjY1YlMp-llnWhdB1lb0Y"; 
-        
+        const API_KEY = "AlzaSyAG8ZRv5S2nddcjY1YIMp-IlnWhdB1Ib0Y"; 
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
         let db = JSON.parse(localStorage.getItem('studyDB_vFinal')) || [];
         let currentIdx = 0;
 
-        // 2026 年可能的模型 ID 清單
-        const MODELS = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-2.0-flash"];
-
         window.handleAiUpload = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            if (!API_KEY || API_KEY.includes("貼上")) {
-                alert("錯誤：尚未設定 API Key！");
-                return;
-            }
-
             toggleLoading(true);
-            const statusLabel = document.getElementById('debugStatus');
-            
             try {
                 const base64 = await toBase64(file);
                 const genAI = new GoogleGenerativeAI(API_KEY);
-                
-                let success = false;
-                let lastError = "";
+                // 根據截圖回饋，固定使用連線成功的 2.0-flash
+                const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-                // 智慧探測迴圈
-                for (let modelName of MODELS) {
-                    try {
-                        statusLabel.innerText = `正在嘗試連線模型: ${modelName}...`;
-                        const model = genAI.getGenerativeModel({ model: modelName });
-                        const prompt = "這是一張小三英文考卷，請辨識其中的單字與句子並翻譯成繁體中文。請只輸出格式：單字 | 翻譯";
-                        
-                        const result = await model.generateContent([
-                            prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
-                        ]);
+                const prompt = "這是一張小三英文考卷，請辨識其中的單字與句子並翻譯成繁體中文。格式：單字 | 翻譯";
+                const result = await model.generateContent([
+                    prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
+                ]);
 
-                        const text = result.response.text();
-                        processResponse(text);
-                        success = true;
-                        console.log(`成功連線至: ${modelName}`);
-                        break; 
-                    } catch (mErr) {
-                        console.warn(`${modelName} 失敗: ${mErr.message}`);
-                        lastError = mErr.message;
-                    }
-                }
-
-                if (success) {
-                    alert("辨識成功！題目已加入題庫。");
-                } else {
-                    alert("所有模型連線失敗，請檢查 API Key 權限。\n最後錯誤: " + lastError);
-                }
-
+                processResponse(result.response.text());
+                alert("辨識成功！");
             } catch (err) {
-                alert("執行過程發生錯誤: " + err.message);
+                if (err.message.includes("429")) {
+                    alert("發送太頻繁了！Google 限制免費版一分鐘只能掃描 2 次。請等 30 秒後再試。");
+                } else {
+                    alert("執行錯誤: " + err.message);
+                }
             } finally {
                 toggleLoading(false);
                 e.target.value = '';
@@ -186,10 +151,7 @@
         };
 
         window.deleteItem = (id) => {
-            if(confirm("確定要刪除這筆題目嗎？")) {
-                db = db.filter(i => i.id !== id);
-                window.saveDB();
-            }
+            if(confirm("確定刪除？")) { db = db.filter(i => i.id !== id); window.saveDB(); }
         };
 
         window.speak = (t) => {
@@ -230,7 +192,7 @@
             if (user === correct) {
                 currentIdx++;
                 if (currentIdx < db.length) renderQuiz();
-                else { alert("🎉 全數完成！"); window.switchTab('list'); }
+                else { alert("🎉 全部練習完成！"); window.switchTab('list'); }
             } else {
                 alert(`正確答案是：${db[currentIdx].word}`);
                 window.speak(db[currentIdx].word);
@@ -267,7 +229,6 @@
             i.click();
         };
 
-        // 啟動 UI
         window.updateUI();
     </script>
 </body>
