@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小三英文 AI 助手</title>
+    <title>小三英文 AI 助手 Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -13,6 +13,7 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .correct-flash { animation: flash 0.6s ease; }
         @keyframes flash { 0% { background: white; } 50% { background: #dcfce7; } 100% { background: white; } }
+        .btn-disabled { opacity: 0.4 !important; cursor: not-allowed !important; }
     </style>
 </head>
 <body class="pb-24">
@@ -21,107 +22,110 @@
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
                 <h1 class="text-2xl font-black italic flex items-center">
-                    <i class="fas fa-graduation-cap mr-2 text-yellow-300"></i>AI 助手
+                    <i class="fas fa-graduation-cap mr-2 text-yellow-300"></i>模擬考 Pro
                 </h1>
-                <p id="versionTag" class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
-                    Version: 2026.04.24-Final_Safe
-                </p>
+                <p id="versionTag" class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">Version: 2026.04.24-Exam-Pro</p>
             </div>
-            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full">
-                <i class="fas fa-cog text-xl text-yellow-300"></i>
-            </button>
+            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full"><i class="fas fa-cog text-xl text-yellow-300"></i></button>
         </div>
     </header>
 
     <main class="p-4 max-w-2xl mx-auto">
         <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
-            <h3 class="font-bold mb-4 text-indigo-300"><i class="fas fa-key mr-2"></i> 設定與備份</h3>
-            <input type="password" id="apiKeyInput" placeholder="在此貼入 API Key (AIza...)" class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mb-4 outline-none text-white focus:ring-2 focus:ring-indigo-500">
+            <h3 class="font-bold mb-4 text-indigo-300">API 與資料管理</h3>
+            <input type="password" id="apiKeyInput" placeholder="在此貼入 API Key" class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mb-4 outline-none text-white focus:ring-2 focus:ring-indigo-500">
             <div class="grid grid-cols-2 gap-2">
                 <button onclick="window.saveSettings()" class="col-span-2 bg-indigo-500 py-3 rounded-xl font-bold">儲存設定</button>
-                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs">備份題庫</button>
-                <button onclick="window.fullReset()" class="bg-red-500/20 text-red-400 py-2 rounded-xl text-xs">清除所有</button>
+                <button onclick="window.fullReset()" class="bg-red-500/20 text-red-400 py-2 rounded-xl text-xs">清除所有題庫</button>
+                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs">導出備份</button>
             </div>
         </section>
 
         <section id="aiSection" class="mb-6">
             <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200 text-center">
                 <div id="idleUI">
-                    <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-camera text-3xl"></i>
+                    <div class="flex justify-center gap-2 mb-6">
+                        <select id="gradeSelect" class="bg-indigo-50 text-indigo-700 font-bold py-2 px-4 rounded-xl border-none outline-none focus:ring-2 focus:ring-indigo-300">
+                            <option value="一年級">一年級</option><option value="二年級">二年級</option>
+                            <option value="三年級" selected>三年級</option><option value="四年級">四年級</option>
+                            <option value="五年級">五年級</option><option value="六年級">六年級</option>
+                        </select>
+                        <div id="modelBadge" class="bg-slate-100 text-slate-400 text-[9px] flex items-center px-3 rounded-xl font-bold">偵測中...</div>
                     </div>
-                    <h2 class="font-bold text-slate-700 text-lg mb-6">拍下考卷生成題目</h2>
+                    
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
-                    <button id="mainScanBtn" onclick="window.checkBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">
-                        <i class="fas fa-magic mr-2 text-yellow-300"></i> 開始 AI 辨識
+                    <button id="mainScanBtn" onclick="window.checkBeforeUpload()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-bold shadow-lg transition-all active:scale-95">
+                        <i class="fas fa-camera mr-2 text-yellow-300"></i> 開始拍照辨識
                     </button>
-                    <p id="cooldownTip" class="text-[10px] text-red-500 mt-3 hidden italic font-bold">⚠️ 系統冷卻中，請稍候...</p>
-                    <div id="modelBadge" class="mt-4 text-[9px] text-slate-400 uppercase font-bold tracking-widest">初始化中...</div>
+                    <p id="cooldownTip" class="text-[10px] text-red-500 mt-3 hidden font-bold">系統冷卻中，請稍候...</p>
                 </div>
 
                 <div id="loadingUI" class="hidden py-10">
                     <i class="fas fa-circle-notch spin text-4xl text-indigo-600 mb-4"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse text-lg">AI 正在過濾並生成句子...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse text-lg">AI 正在生成年級教材...</p>
                 </div>
             </div>
         </section>
 
-        <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6 shadow-inner">
-            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">題庫單字</button>
-            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">情境測驗</button>
+        <div class="flex bg-slate-200/50 p-1.5 rounded-2xl mb-6 shadow-inner">
+            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600 transition-all">我的題庫</button>
+            <button onclick="window.startExam()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">模擬考</button>
         </div>
 
         <section id="listPage"><div id="itemList" class="space-y-3"></div></section>
+
         <section id="quizPage" class="hidden">
             <div id="quizCard" class="bg-white rounded-[3rem] shadow-2xl p-8 text-center min-h-[500px] flex flex-col justify-center border border-indigo-50"></div>
         </section>
+
+        <section id="resultPage" class="hidden">
+            <div class="bg-white rounded-[2.5rem] shadow-xl p-8 border border-slate-100">
+                <div class="text-center mb-8">
+                    <div id="scoreRing" class="text-6xl font-black text-indigo-600 mb-2">100</div>
+                    <div class="text-slate-400 font-bold tracking-widest uppercase text-xs">考試總結報告</div>
+                </div>
+                <div id="resultSummary" class="space-y-4"></div>
+                <button onclick="window.switchTab('list')" class="w-full mt-8 bg-slate-900 text-white py-4 rounded-2xl font-bold">返回主頁</button>
+            </div>
+        </section>
     </main>
 
-    <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-lg border-t flex justify-around p-5 shadow-lg z-40">
-        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600"><i class="fas fa-home text-xl"></i><span class="text-[10px] mt-1 font-bold">首頁</span></button>
-        <button onclick="window.startQuiz()" class="flex flex-col items-center text-slate-400"><i class="fas fa-pen-nib text-xl"></i><span class="text-[10px] mt-1 font-bold">練習</span></button>
-    </nav>
-
     <script>
-        let db = JSON.parse(localStorage.getItem('studyDB_Final_Safe')) || [];
-        let lastReqTime = parseInt(localStorage.getItem('lastReq_Final_Safe')) || 0;
+        let db = JSON.parse(localStorage.getItem('examDB_v1')) || [];
+        let lastReqTime = parseInt(localStorage.getItem('examLastReq')) || 0;
         let activeModel = "";
+        let currentExam = [];
+        let currentIdx = 0;
+        let examScores = [];
 
         window.onload = async () => {
-            const key = localStorage.getItem('userKey_Final_Safe');
-            if (key) {
-                document.getElementById('apiKeyInput').value = key;
-                await detectModel(key);
+            const k = localStorage.getItem('userKey_exam');
+            if (k) {
+                document.getElementById('apiKeyInput').value = k;
+                await detectModel(k);
             } else window.toggleSettings(true);
             updateUI();
             checkCooldown();
         };
 
-        // 回歸 2026.04.24-23 驗證成功的自動路徑偵測
         async function detectModel(key) {
             const badge = document.getElementById('modelBadge');
             try {
                 const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
                 const d = await r.json();
                 const m = d.models.find(i => i.name.includes('1.5-flash')) || d.models.find(i => i.name.includes('flash'));
-                if(m) {
-                    activeModel = m.name;
-                    badge.innerText = `已連結: ${m.displayName}`;
-                }
-            } catch(e) { badge.innerText = "API Key 錯誤或失效"; }
+                if(m) { activeModel = m.name; badge.innerText = m.displayName; }
+            } catch(e) { badge.innerText = "Key 錯誤"; }
         }
 
-        window.saveSettings = async () => {
-            const k = document.getElementById('apiKeyInput').value.trim();
-            localStorage.setItem('userKey_Final_Safe', k);
-            await detectModel(k);
-            alert("設定儲存成功！");
-            window.toggleSettings(false);
+        window.saveSettings = () => {
+            localStorage.setItem('userKey_exam', document.getElementById('apiKeyInput').value.trim());
+            location.reload();
         };
 
         window.checkBeforeUpload = () => {
             const diff = Date.now() - lastReqTime;
-            if (diff < 40000) return alert(`請等待 ${Math.ceil((40000-diff)/1000)} 秒冷卻。`);
+            if (diff < 35000) return alert("AI 冷卻中。");
             if (!activeModel) return window.toggleSettings(true);
             document.getElementById('cameraInput').click();
         };
@@ -131,122 +135,164 @@
             if (!file) return;
 
             toggleLoader(true);
-            const key = localStorage.getItem('userKey_Final_Safe');
-            
+            const key = localStorage.getItem('userKey_exam');
+            const grade = document.getElementById('gradeSelect').value;
+
             try {
-                // 圖片壓縮
                 const base64 = await compressImage(file, 800);
-                // 使用自動偵測出的路徑
                 const url = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${key}`;
                 
-                const payload = {
-                    contents: [{
-                        parts: [{ text: "辨識英文單字。過濾括號、題號、中文。每個單字配一個小三英文程度的例句。格式：單字 | 翻譯 | 例句" },
-                               { inline_data: { mime_type: "image/jpeg", data: base64.split(',')[1] } }]
-                    }]
-                };
+                const prompt = `辨識圖片中的單字。任務：
+                    1. 只要純英文單字，過濾括號與雜訊。
+                    2. 針對${grade}程度，造一個簡單英文例句。
+                    格式：單字 | 翻譯 | 例句。每行一組。`;
 
                 const resp = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64.split(',')[1] } }] }] })
                 });
 
                 const data = await resp.json();
-                processData(data.candidates[0].content.parts[0].text);
+                processData(data.candidates[0].content.parts[0].text, grade);
                 
                 lastReqTime = Date.now();
-                localStorage.setItem('lastReq_Final_Safe', lastReqTime);
-                startCooldown(45);
-                alert("辨識成功！題目已加入。");
-            } catch (err) { alert("連線失敗，請檢查 Key。"); }
+                localStorage.setItem('examLastReq', lastReqTime);
+                startCooldown(40);
+                alert("辨識成功！單字已歸類至 " + grade);
+            } catch (err) { alert("連線失敗。"); }
             finally { toggleLoader(false); e.target.value = ''; }
         };
 
-        function processData(text) {
+        function processData(text, grade) {
             text.split('\n').forEach(line => {
                 if (line.includes('|')) {
                     let p = line.split('|').map(s => s.trim());
                     if (p.length >= 3) {
-                        let word = p[0].replace(/[^a-zA-Z]/g, ''); // 過濾非英文字母
-                        if (word.length > 1) db.push({ id: Date.now()+Math.random(), word, trans: p[1], sentence: p[2] });
+                        let word = p[0].replace(/[^a-zA-Z]/g, '');
+                        if (word.length > 1) db.push({ id: Date.now()+Math.random(), word, trans: p[1], sentence: p[2], grade });
                     }
                 }
             });
-            window.saveDB();
+            saveDB();
         }
 
-        window.saveDB = () => { localStorage.setItem('studyDB_Final_Safe', JSON.stringify(db)); updateUI(); };
+        window.saveDB = () => { localStorage.setItem('examDB_v1', JSON.stringify(db)); updateUI(); };
 
         function updateUI() {
             const list = document.getElementById('itemList');
             list.innerHTML = db.slice().reverse().map(item => `
-                <div class="bg-white p-5 rounded-3xl shadow-sm flex justify-between items-center mb-2 border border-slate-100">
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2 border border-slate-100">
                     <div onclick="window.speak('${item.word}')" class="flex-1 cursor-pointer">
-                        <div class="font-bold text-indigo-900 text-lg">${item.word}</div>
-                        <div class="text-[10px] text-slate-400 font-medium">${item.trans}</div>
-                        <div class="text-[10px] text-indigo-400 italic mt-1 font-bold">${item.sentence}</div>
+                        <div class="font-bold text-indigo-900">${item.word} <span class="text-[9px] bg-slate-100 px-2 py-1 rounded text-slate-400 ml-2">${item.grade}</span></div>
+                        <div class="text-[10px] text-slate-400 italic">${item.sentence}</div>
                     </div>
-                    <button onclick="window.deleteItem(${item.id})" class="text-slate-200 p-2"><i class="fas fa-trash"></i></button>
+                    <button onclick="window.deleteItem(${item.id})" class="text-slate-200 p-2"><i class="fas fa-trash-alt"></i></button>
                 </div>
             `).join('');
         }
 
         window.deleteItem = (id) => { if(confirm("刪除？")) { db = db.filter(i => i.id !== id); window.saveDB(); } };
 
-        // --- 測驗功能：句子挖空模式 ---
-        window.startQuiz = () => {
-            if (db.length === 0) return alert("題庫沒單字。");
-            renderQuiz(0); window.switchTab('quiz');
+        // --- 核心模擬考邏輯 ---
+        window.startExam = () => {
+            if (db.length < 5) return alert("題庫單字量不足，請先掃描更多內容。");
+            
+            // 打亂並選出 20 題
+            let shuffled = [...db].sort(() => 0.5 - Math.random());
+            currentExam = shuffled.slice(0, 20);
+            examScores = [];
+            currentIdx = 0;
+            
+            window.switchTab('quiz');
+            renderExamQuestion();
         };
 
-        function renderQuiz(idx) {
-            const item = db[idx];
+        function renderExamQuestion() {
+            const item = currentExam[currentIdx];
             const card = document.getElementById('quizCard');
-            // 將單字在句子中挖空
-            const blanked = item.sentence.replace(new RegExp(item.word, 'gi'), '______');
+            const isWordType = currentIdx < 10; // 前 10 題為聽力/單字題
             
-            card.innerHTML = `
-                <div class="text-slate-300 text-[10px] mb-8 font-bold">Q ${idx + 1} / ${db.length}</div>
-                <div class="mb-10">
-                    <button onclick="window.speak('${item.sentence}')" class="w-20 h-20 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl">
+            let contentHtml = "";
+            if (isWordType) {
+                // 單字模式：只看中文
+                contentHtml = `
+                    <button onclick="window.speak('${item.word}')" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl active:scale-95">
+                        <i class="fas fa-volume-up text-3xl"></i>
+                    </button>
+                    <div class="text-indigo-900 font-black text-3xl mb-4">${item.trans}</div>
+                    <p class="text-slate-400 text-xs mb-8 font-bold">請輸入正確英文單字</p>
+                `;
+            } else {
+                // 句子模式：情境填空
+                const blanked = item.sentence.replace(new RegExp(item.word, 'gi'), '______');
+                contentHtml = `
+                    <button onclick="window.speak('${item.sentence}')" class="w-20 h-20 bg-slate-800 text-white rounded-full mx-auto mb-6 shadow-xl">
                         <i class="fas fa-volume-up text-2xl"></i>
                     </button>
-                    <div class="text-indigo-900 font-bold text-xl leading-relaxed px-4 mb-4 font-serif">${blanked}</div>
-                    <div class="text-indigo-400 text-sm font-bold">提示：${item.trans}</div>
-                </div>
-                <input type="text" id="ansIn" class="w-full border-b-4 border-indigo-100 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-bold" placeholder="..." autocomplete="off">
-                <button onclick="window.checkAns(${idx})" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold text-xl shadow-lg">檢查答案</button>
+                    <div class="text-indigo-900 font-bold text-xl leading-relaxed mb-4 px-4">${blanked}</div>
+                    <div class="text-indigo-400 font-bold mb-8">(${item.trans})</div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="text-slate-300 text-[10px] mb-8 font-bold tracking-[0.2em]">QUESTION ${currentIdx + 1} / 20</div>
+                ${contentHtml}
+                <input type="text" id="ansIn" onkeydown="handleEnter(event)" class="w-full border-b-4 border-indigo-100 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-black" placeholder="..." autocomplete="off">
+                <p class="text-[10px] text-slate-300 font-bold">按下 Enter 跳下一題</p>
             `;
-            window.speak(item.sentence);
+            
             setTimeout(() => document.getElementById('ansIn').focus(), 400);
+            window.speak(isWordType ? item.word : item.sentence);
         }
 
-        window.checkAns = (idx) => {
-            const user = document.getElementById('ansIn').value.trim().toLowerCase();
-            const correct = db[idx].word.toLowerCase();
-            if (user === correct) {
-                document.getElementById('quizCard').classList.add('correct-flash');
-                setTimeout(() => {
-                    document.getElementById('quizCard').classList.remove('correct-flash');
-                    if (idx + 1 < db.length) renderQuiz(idx + 1);
-                    else { alert("🎉 全數完成！"); window.switchTab('list'); }
-                }, 600);
-            } else {
-                alert(`正確單字是：${db[idx].word}`);
-                window.speak(db[idx].word);
+        window.handleEnter = (e) => {
+            if (e.key === "Enter") {
+                const val = document.getElementById('ansIn').value.trim().toLowerCase();
+                const correct = currentExam[currentIdx].word.toLowerCase();
+                
+                examScores.push({
+                    word: currentExam[currentIdx].word,
+                    user: val || "(未填)",
+                    isCorrect: val === correct
+                });
+
+                currentIdx++;
+                if (currentIdx < 20 && currentIdx < currentExam.length) {
+                    renderExamQuestion();
+                } else {
+                    showExamResult();
+                }
             }
         };
+
+        function showExamResult() {
+            window.switchTab('result');
+            const score = Math.round((examScores.filter(s => s.isCorrect).length / examScores.length) * 100);
+            document.getElementById('scoreRing').innerText = score;
+            
+            const summary = document.getElementById('resultSummary');
+            summary.innerHTML = examScores.map((s, i) => `
+                <div class="flex items-center justify-between p-3 rounded-2xl ${s.isCorrect ? 'bg-green-50' : 'bg-red-50'} border ${s.isCorrect ? 'border-green-100' : 'border-red-100'}">
+                    <div class="flex items-center gap-3">
+                        <span class="text-[9px] font-bold text-slate-400 w-4">${i+1}</span>
+                        <div class="font-bold ${s.isCorrect ? 'text-green-700' : 'text-red-700'}">${s.word}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] ${s.isCorrect ? 'text-green-500' : 'text-red-400'} font-bold">${s.isCorrect ? 'CORRECT' : 'YOUR: ' + s.user}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         window.speak = (t) => {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(t);
-            u.lang = 'en-US'; 
-            u.rate = 0.8; // 固定 0.8 倍速
+            u.lang = 'en-US'; u.rate = 0.8;
             window.speechSynthesis.speak(u);
         };
 
-        // --- 輔助工具 ---
+        // --- 輔助 ---
         function toggleLoader(s) {
             document.getElementById('idleUI').classList.toggle('hidden', s);
             document.getElementById('loadingUI').classList.toggle('hidden', !s);
@@ -262,8 +308,7 @@
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
                         const scale = maxWidth / img.width;
-                        canvas.width = maxWidth;
-                        canvas.height = img.height * scale;
+                        canvas.width = maxWidth; canvas.height = img.height * scale;
                         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                         r(canvas.toDataURL('image/jpeg', 0.6));
                     };
@@ -275,35 +320,33 @@
             const btn = document.getElementById('mainScanBtn');
             const txt = document.getElementById('btnText');
             const tip = document.getElementById('cooldownTip');
-            btn.classList.add('btn-disabled');
-            tip.classList.remove('hidden');
+            btn.classList.add('btn-disabled'); btn.disabled = true; tip.classList.remove('hidden');
             let sec = duration;
             const timer = setInterval(() => {
-                txt.innerText = `冷卻中 (${sec--}s)`;
-                if (sec < 0) {
-                    clearInterval(timer);
-                    btn.classList.remove('btn-disabled');
-                    tip.classList.add('hidden');
-                    txt.innerText = "開始拍照匯入";
-                }
+                txt.innerText = `冷卻 (${sec--}s)`;
+                if (sec < 0) { clearInterval(timer); btn.classList.remove('btn-disabled'); btn.disabled = false; tip.classList.add('hidden'); txt.innerText = "開始拍照辨識"; }
             }, 1000);
         }
 
         window.switchTab = (name) => {
-            document.getElementById('listPage').classList.toggle('hidden', name !== 'list');
-            document.getElementById('quizPage').classList.toggle('hidden', name !== 'quiz');
-            document.getElementById('aiSection').classList.toggle('hidden', name === 'quiz');
+            const pages = ['listPage', 'quizPage', 'resultPage', 'aiSection'];
+            pages.forEach(p => document.getElementById(p).classList.add('hidden'));
+            
+            if (name === 'list') { document.getElementById('listPage').classList.remove('hidden'); document.getElementById('aiSection').classList.remove('hidden'); }
+            else if (name === 'quiz') document.getElementById('quizPage').classList.remove('hidden');
+            else if (name === 'result') document.getElementById('resultPage').classList.remove('hidden');
+            
             const isL = name === 'list';
             document.getElementById('tabBtnList').className = isL ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
-            document.getElementById('tabBtnQuiz').className = !isL ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+            document.getElementById('tabBtnQuiz').className = name === 'quiz' ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
         };
 
-        window.fullReset = () => { if(confirm("確定清除？")) { localStorage.clear(); location.reload(); } };
+        window.fullReset = () => { if(confirm("清除？")) { localStorage.clear(); location.reload(); } };
         window.toggleSettings = () => document.getElementById('settingsSection').classList.toggle('hidden');
         window.exportData = () => {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type:'application/json'}));
-            a.download = `study_backup.json`; a.click();
+            a.download = `study_exam_backup.json`; a.click();
         };
         function checkCooldown() {
             const diff = Date.now() - lastReqTime;
