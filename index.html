@@ -11,28 +11,28 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: #f8fafc; color: #1e293b; }
         .loading-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .correct-flash { animation: flash 0.6s ease; }
         @keyframes flash { 0% { background: white; } 50% { background: #dcfce7; } 100% { background: white; } }
-        .btn-disabled { opacity: 0.5 !important; cursor: not-allowed !important; filter: grayscale(1); }
+        .btn-disabled { opacity: 0.4 !important; cursor: not-allowed !important; pointer-events: none; }
     </style>
 </head>
 <body class="pb-28">
 
-    <header class="bg-indigo-700 text-white p-6 shadow-xl sticky top-0 z-30 rounded-b-[2rem]">
+    <header class="bg-slate-900 text-white p-6 shadow-xl sticky top-0 z-30 rounded-b-[2rem]">
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
                 <h1 class="text-2xl font-black italic flex items-center">
-                    <i class="fas fa-brain mr-2 text-yellow-300"></i>AI 助手
+                    <i class="fas fa-robot mr-2 text-indigo-400"></i>AI 助手
                 </h1>
-                <p id="versionTag" class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
-                    Version: 2026.04.24-16 (Anti-Double Trigger)
+                <p id="versionTag" class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                    Version: 2026.04.24-17 (Clean Boot)
                 </p>
             </div>
-            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20">
-                <i class="fas fa-cog text-xl text-yellow-300"></i>
+            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full">
+                <i class="fas fa-cog text-xl text-indigo-400"></i>
             </button>
         </div>
     </header>
@@ -40,17 +40,16 @@
     <main class="p-4 max-w-2xl mx-auto">
         <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold flex items-center text-yellow-400"><i class="fas fa-key mr-2"></i> 管理與備份</h3>
+                <h3 class="font-bold flex items-center text-indigo-300"><i class="fas fa-shield-alt mr-2"></i> 管理與清理</h3>
                 <button onclick="window.toggleSettings(false)"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <input type="password" id="apiKeyInput" placeholder="在此輸入 AIza... 金鑰" 
+            <input type="password" id="apiKeyInput" placeholder="在此輸入 API Key" 
                    class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mt-1 mb-4 outline-none text-white">
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                <button onclick="window.saveSettings()" class="col-span-2 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold">儲存金鑰</button>
-                <button onclick="window.forceResetCooldown()" class="bg-red-500/20 text-red-300 py-2 rounded-xl text-xs border border-red-500/50">重置冷卻時間</button>
-                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs border border-slate-600">導出備份</button>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="window.saveSettings()" class="col-span-2 bg-indigo-600 py-3 rounded-xl font-bold">儲存 Key</button>
+                <button onclick="window.fullHardReset()" class="bg-red-500/20 text-red-400 py-2 rounded-xl text-xs border border-red-500/30">強制清空所有請求</button>
+                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs border border-slate-600">備份題庫</button>
             </div>
-            <p class="text-[9px] text-slate-500 text-center">提示：若出現 429 錯誤，請檢查 n8n 是否共用此 Key。</p>
         </section>
 
         <section id="aiSection" class="mb-6">
@@ -59,29 +58,29 @@
                     <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-camera text-3xl"></i>
                     </div>
-                    <h2 class="font-bold text-slate-700 text-lg mb-6">掃瞄課本或考卷</h2>
+                    <h2 class="font-bold text-slate-700 text-lg mb-6">辨識考卷單字</h2>
                     <input type="file" id="cameraInput" accept="image/*" class="hidden">
-                    <button id="mainScanBtn" onclick="window.checkBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg transition-all active:scale-95">
-                        <i class="fas fa-magic mr-2 text-yellow-300"></i> <span id="btnText">開始拍照匯入</span>
+                    <button id="mainScanBtn" onclick="window.checkBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg transition-all">
+                        <i class="fas fa-magic mr-2"></i> <span id="btnText">開始拍照匯入</span>
                     </button>
-                    <p id="quotaTip" class="text-[10px] text-slate-400 mt-3 hidden italic font-bold">⚠️ Google 配額限制中，請稍候...</p>
+                    <p id="quotaTip" class="text-[10px] text-red-400 mt-3 hidden italic font-bold">配額保護倒數中...</p>
                 </div>
 
                 <div id="loadingUI" class="hidden py-10">
                     <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-600 mb-4"></i>
                     <p class="text-indigo-600 font-bold animate-pulse text-lg">AI 正在努力翻譯...</p>
-                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 font-mono">Gemini 2.0 Flash Request...</p>
+                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 font-mono">Status: Awaiting Server...</p>
                 </div>
             </div>
         </section>
 
-        <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6">
-            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">目前題庫</button>
-            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">練習測驗</button>
+        <div class="flex bg-slate-200/50 p-1 rounded-2xl mb-6 shadow-inner">
+            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">題庫</button>
+            <button onclick="window.startQuiz()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">練習</button>
         </div>
 
         <section id="listPage">
-            <div id="emptyTip" class="text-center py-20 text-slate-300 hidden font-bold">目前沒有題目喔！</div>
+            <div id="emptyTip" class="text-center py-20 text-slate-300 hidden font-bold">還沒加入單字喔！</div>
             <div id="itemList" class="space-y-3"></div>
         </section>
 
@@ -91,7 +90,7 @@
     </main>
 
     <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-lg border-t flex justify-around p-5 shadow-lg z-40">
-        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600"><i class="fas fa-home text-xl"></i><span class="text-[10px] mt-1 font-bold">首頁</span></button>
+        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600"><i class="fas fa-home text-xl"></i><span class="text-[10px] mt-1 font-bold">主頁</span></button>
         <button onclick="window.startQuiz()" class="flex flex-col items-center text-slate-400"><i class="fas fa-play text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span></button>
     </nav>
 
@@ -99,8 +98,8 @@
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
         let db = JSON.parse(localStorage.getItem('studyDB_final')) || [];
-        let isProcessing = false; // 關鍵鎖：防止多重發送
         let lastRequestTimestamp = parseInt(localStorage.getItem('last_api_request_time')) || 0;
+        let abortController = null;
 
         window.onload = () => {
             const savedKey = localStorage.getItem('user_gemini_key');
@@ -110,25 +109,25 @@
             updateUI();
             checkAndResumeCooldown();
 
-            // 徹底解決重複觸發：先移除舊監聽再添加唯一監聽
             const camInput = document.getElementById('cameraInput');
             if (camInput) {
-                camInput.onchange = null; // 清除 HTML 裡的監聽
+                camInput.onchange = null;
                 camInput.addEventListener('change', window.handleAiUpload);
+            }
+        };
+
+        window.fullHardReset = () => {
+            if(confirm("這將清除所有緩存並重新整理網頁，確定嗎？")) {
+                localStorage.setItem('last_api_request_time', 0);
+                location.reload();
             }
         };
 
         function checkAndResumeCooldown() {
             const now = Date.now();
             const diff = now - lastRequestTimestamp;
-            if (diff < 40000) startCooldown(Math.ceil((40000 - diff) / 1000));
+            if (diff < 35000) startCooldown(Math.ceil((35000 - diff) / 1000));
         }
-
-        window.forceResetCooldown = () => {
-            lastRequestTimestamp = 0;
-            localStorage.setItem('last_api_request_time', 0);
-            location.reload(); // 重新整理網頁
-        };
 
         window.toggleSettings = (show = null) => {
             const sec = document.getElementById('settingsSection');
@@ -139,16 +138,17 @@
 
         window.saveSettings = () => {
             const key = document.getElementById('apiKeyInput').value.trim();
-            if (!key.startsWith("AIza")) return alert("格式錯誤。");
+            if (!key.startsWith("AIza")) return alert("金鑰格式錯誤。");
             localStorage.setItem('user_gemini_key', key);
-            alert("金鑰已更新。");
+            alert("API 設定已儲存。");
             window.toggleSettings(false);
         };
 
         window.checkBeforeUpload = () => {
             const now = Date.now();
-            if (now - lastRequestTimestamp < 35000) {
-                alert(`API 額度冷卻中，請再等 ${Math.ceil((35000 - (now - lastRequestTimestamp)) / 1000)} 秒。`);
+            const cooldown = 35000;
+            if (now - lastRequestTimestamp < cooldown) {
+                alert(`API 配額冷卻中，請等待倒數結束。`);
                 return;
             }
             if (!localStorage.getItem('user_gemini_key')) {
@@ -160,42 +160,43 @@
         };
 
         window.handleAiUpload = async (e) => {
-            if (isProcessing) return; // 物理防禦
             const file = e.target.files[0];
             if (!file) return;
 
-            const now = Date.now();
-            // 如果 3 秒內才剛發過請求，直接無視（解決瀏覽器連發問題）
-            if (now - lastRequestTimestamp < 3000) return;
-
-            isProcessing = true;
-            toggleLoading(true);
-            lastRequestTimestamp = now;
+            // 啟動冷卻鎖定，預防任何形式的重複觸發
+            lastRequestTimestamp = Date.now();
             localStorage.setItem('last_api_request_time', lastRequestTimestamp);
-
+            
+            toggleLoading(true);
             const apiKey = localStorage.getItem('user_gemini_key');
+            
             try {
+                // 如果有之前還沒斷開的請求，先切斷
+                if (abortController) abortController.abort();
+                abortController = new AbortController();
+
                 const base64 = await toBase64(file);
                 const genAI = new GoogleGenerativeAI(apiKey);
                 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-                const prompt = "這是一張國小考卷。請辨識單字並翻譯。格式：單字 | 翻譯";
+                // 極簡 Prompt 以節省 TPM (Token Per Minute)
+                const prompt = "國小英文考卷辨識。輸出：英文 | 翻譯";
                 const result = await model.generateContent([
                     prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
                 ]);
 
                 processResponse(result.response.text());
-                alert("辨識成功！單字已加入。");
-                startCooldown(40);
+                alert("辨識成功！");
+                startCooldown(45); // 成功後延長冷卻確保安全
             } catch (err) {
                 console.error("Critical AI Error:", err);
                 if (err.message.includes("429")) {
-                    alert("【配額錯誤】Google 每分鐘僅限掃瞄 2 次。請等一分鐘，並確認無其他 App 在使用同一個 Key。");
+                    alert("【配額爆了】Google 每分鐘僅限 2 次，且流量有限。請等一分鐘後再試，並嘗試拍小範圍一點。");
+                    startCooldown(60);
                 } else {
                     alert("執行錯誤: " + err.message);
                 }
             } finally {
-                isProcessing = false;
                 toggleLoading(false);
                 e.target.value = ''; 
             }
@@ -289,10 +290,10 @@
             const card = document.getElementById('quizCard');
             card.innerHTML = `
                 <div class="text-slate-300 text-[10px] mb-8 font-bold uppercase tracking-widest">Question ${idx + 1} / ${db.length}</div>
-                <button onclick="window.speak('${item.word}')" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl active:scale-95 transition-all"><i class="fas fa-volume-up text-3xl"></i></button>
+                <button onclick="window.speak('${item.word}')" class="w-24 h-24 bg-indigo-600 text-white rounded-full mx-auto mb-6 shadow-xl active:scale-95"><i class="fas fa-volume-up text-3xl"></i></button>
                 <div class="text-indigo-500 font-bold text-xl mb-10">${item.trans}</div>
                 <input type="text" id="ansIn" class="w-full border-b-2 border-slate-200 text-3xl text-center p-2 mb-10 outline-none focus:border-indigo-500 uppercase font-bold" placeholder="..." autocomplete="off">
-                <button onclick="window.checkAns(${idx})" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold text-xl shadow-lg active:scale-95 transition-all">檢查答案</button>
+                <button onclick="window.checkAns(${idx})" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-bold text-xl shadow-lg active:scale-95">檢查答案</button>
             `;
             window.speak(item.word);
             setTimeout(() => document.getElementById('ansIn').focus(), 400);
@@ -307,7 +308,7 @@
                 setTimeout(() => {
                     document.getElementById('quizCard').classList.remove('correct-flash');
                     if (idx + 1 < db.length) renderQuiz(idx + 1);
-                    else { alert("🎉 全對！你太棒了！"); window.switchTab('list'); }
+                    else { alert("🎉 全對！弟弟太強了！"); window.switchTab('list'); }
                 }, 600);
             } else {
                 alert(`正確答案是：${db[idx].word}`);
@@ -331,9 +332,8 @@
 
         window.exportData = () => {
             const b = new Blob([JSON.stringify(db)], {type:'application/json'});
-            const url = URL.createObjectURL(b);
-            const a = document.createElement('a'); a.href = url;
-            a.download = `study_data_${new Date().toISOString().slice(0,10)}.json`;
+            const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+            a.download = `backup_${new Date().toISOString().slice(0,10)}.json`;
             a.click();
         };
 
@@ -341,7 +341,7 @@
             const i = document.createElement('input'); i.type = 'file'; i.accept = '.json';
             i.onchange = e => {
                 const reader = new FileReader();
-                reader.onload = ev => { try { db = JSON.parse(ev.target.result); window.saveDB(); alert("成功匯入！"); } catch(e) { alert("匯入失敗。"); } };
+                reader.onload = ev => { try { db = JSON.parse(ev.target.result); window.saveDB(); alert("成功匯入！"); } catch(e) { alert("讀取失敗。"); } };
                 reader.readAsText(e.target.files[0]);
             };
             i.click();
