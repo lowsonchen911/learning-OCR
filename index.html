@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 聽考 PRO - 最終穩定版</title>
+    <title>AI 英文聽考 PRO - 最終版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -13,9 +13,13 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .correct-flash { animation: flash 0.6s ease; }
         @keyframes flash { 0% { background: white; } 50% { background: #dcfce7; } 100% { background: white; } }
+        /* 強制顯示與輸入皆為小寫 */
         input { text-transform: lowercase !important; }
-        .option-btn { transition: all 0.1s; text-align: left; }
+        .option-btn { transition: all 0.1s; text-align: left; position: relative; }
         .option-btn:active { background: #4f46e5 !important; color: white !important; }
+        .report-card { border-left: 4px solid transparent; }
+        .report-correct { border-left-color: #22c55e; background: #f0fdf4; }
+        .report-wrong { border-left-color: #ef4444; background: #fef2f2; }
     </style>
 </head>
 <body class="pb-24">
@@ -23,8 +27,8 @@
     <header class="bg-indigo-700 text-white p-6 shadow-xl sticky top-0 z-30 rounded-b-[2rem]">
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
-                <h1 class="text-2xl font-black italic flex items-center"><i class="fas fa-database mr-2 text-yellow-300"></i>聽考 PRO</h1>
-                <p id="versionTag" class="text-[9px] text-indigo-200 font-bold uppercase tracking-widest">Version: 2026.04.24-DB-Final</p>
+                <h1 class="text-2xl font-black italic flex items-center"><i class="fas fa-check-double mr-2 text-yellow-300"></i>聽考 PRO</h1>
+                <p id="versionTag" class="text-[9px] text-indigo-200 font-bold uppercase tracking-widest">Version: 2026.04.24-Ultimate-S3</p>
             </div>
             <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full active:scale-90"><i class="fas fa-cog text-xl text-yellow-300"></i></button>
         </div>
@@ -32,10 +36,10 @@
 
     <main class="p-4 max-w-2xl mx-auto">
         <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
-            <h3 class="font-bold mb-4 flex items-center text-indigo-300">資料庫與 API 設定</h3>
+            <h3 class="font-bold mb-4 flex items-center text-indigo-300">系統管理</h3>
             <input type="password" id="apiKeyInput" placeholder="在此輸入 API Key" class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mb-4 outline-none text-white focus:ring-2 focus:ring-indigo-500">
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="window.saveSettings()" class="col-span-2 bg-indigo-500 py-3 rounded-xl font-bold active:scale-95">儲存設置</button>
+                <button onclick="window.saveSettings()" class="col-span-2 bg-indigo-500 py-3 rounded-xl font-bold active:scale-95">儲存並重整</button>
                 <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-xs">導出備份</button>
                 <button onclick="window.fullReset()" class="bg-red-500/20 text-red-400 py-2 rounded-xl text-xs">清空數據庫</button>
             </div>
@@ -50,59 +54,57 @@
                             <option value="G3" selected>三年級</option><option value="G4">四年級</option>
                             <option value="G5">五年級</option><option value="G6">六年級</option>
                         </select>
-                        <div id="modelBadge" class="bg-slate-100 text-slate-400 text-[9px] flex items-center px-3 rounded-xl font-bold uppercase">Ready</div>
+                        <div id="modelBadge" class="bg-slate-100 text-slate-400 text-[9px] flex items-center px-3 rounded-xl font-bold uppercase">DB Ready</div>
                     </div>
                     
                     <div class="mb-4 flex gap-2">
-                        <input type="text" id="manualInput" placeholder="手動加入單字 (如 apple)" class="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-400">
+                        <input type="text" id="manualInput" placeholder="輸入單字直接新增" class="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-400">
                         <button onclick="window.handleManual()" class="bg-indigo-600 text-white px-5 rounded-xl font-bold active:scale-90"><i class="fas fa-plus"></i></button>
                     </div>
 
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
-                    <button onclick="window.checkBeforeUpload()" id="scanBtn" class="w-full bg-indigo-100 text-indigo-700 py-4 rounded-2xl font-bold shadow-sm active:scale-95 transition-all">
-                        <i class="fas fa-camera mr-2"></i> 拍照自動去重辨識
+                    <button onclick="window.checkBeforeUpload()" id="scanBtn" class="w-full bg-indigo-100 text-indigo-700 py-4 rounded-2xl font-bold active:scale-95 transition-all">
+                        <i class="fas fa-camera mr-2"></i> 拍照入庫 (自動過濾重複)
                     </button>
                 </div>
                 <div id="loadingUI" class="hidden py-10 text-center">
                     <i class="fas fa-circle-notch spin text-4xl text-indigo-600 mb-4 inline-block"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse">批次同步數據庫中...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse">處理中，請稍候...</p>
                 </div>
             </div>
         </section>
 
         <div class="flex bg-slate-200/50 p-1.5 rounded-2xl mb-6 shadow-inner">
-            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600 transition-all">我的題庫</button>
-            <button onclick="window.startExam()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">聽考測驗</button>
-            <button onclick="window.switchTab('history')" id="tabBtnHistory" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">歷史成績</button>
+            <button onclick="window.switchTab('list')" id="tabBtnList" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600">題庫</button>
+            <button onclick="window.startExam()" id="tabBtnQuiz" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">聽考</button>
+            <button onclick="window.switchTab('history')" id="tabBtnHistory" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">紀錄</button>
         </div>
 
         <section id="listPage"><div id="itemList" class="space-y-3"></div></section>
         <section id="historyPage" class="hidden"><div id="historyList" class="space-y-3"></div></section>
-        <section id="quizPage" class="hidden">
-            <div id="quizCard" class="bg-white rounded-[3rem] shadow-2xl p-8 text-center min-h-[600px] flex flex-col justify-between border border-indigo-50 relative"></div>
-        </section>
+        <section id="quizPage" class="hidden"><div id="quizCard" class="bg-white rounded-[3rem] shadow-2xl p-8 text-center min-h-[600px] flex flex-col justify-between border border-indigo-50 relative"></div></section>
 
         <section id="resultPage" class="hidden">
             <div class="bg-white rounded-[2.5rem] shadow-xl p-6 border border-slate-100">
                 <div class="text-center mb-6">
                     <div id="resCode" class="text-[10px] text-slate-400 font-mono mb-2 uppercase font-bold tracking-widest">---</div>
                     <div id="scoreDisplay" class="text-7xl font-black text-indigo-600 mb-2">100</div>
-                    <p class="text-xs font-bold text-slate-400 uppercase">Performance Result</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Exam Score Report</p>
                 </div>
                 <div id="resultSummary" class="space-y-3 max-h-[400px] overflow-y-auto px-1"></div>
-                <button onclick="window.switchTab('list')" class="w-full mt-6 bg-indigo-700 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">結束檢討</button>
+                <button onclick="window.switchTab('list')" class="w-full mt-6 bg-indigo-700 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all">返回主頁</button>
             </div>
         </section>
     </main>
 
     <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-lg border-t flex justify-around p-5 shadow-lg z-40">
-        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600"><i class="fas fa-home text-xl"></i><span class="text-[10px] mt-1 font-bold">主頁</span></button>
-        <button onclick="window.startExam()" class="flex flex-col items-center text-slate-400"><i class="fas fa-pen-nib text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span></button>
+        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600"><i class="fas fa-book text-xl"></i><span class="text-[10px] mt-1 font-bold">題庫</span></button>
+        <button onclick="window.startExam()" class="flex flex-col items-center text-slate-400"><i class="fas fa-play text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span></button>
     </nav>
 
     <script type="module">
-        let db = JSON.parse(localStorage.getItem('vFinal_db')) || [];
-        let history = JSON.parse(localStorage.getItem('vFinal_history')) || [];
+        let db = JSON.parse(localStorage.getItem('final_v5_db')) || [];
+        let history = JSON.parse(localStorage.getItem('history_v5')) || [];
         let activeModel = "";
         let currentExamItems = [];
         let currentIdx = 0;
@@ -110,7 +112,7 @@
         let examOptionsState = []; 
 
         window.onload = async () => {
-            const key = localStorage.getItem('vFinal_key');
+            const key = localStorage.getItem('v5_stable_key');
             if (key) { document.getElementById('apiKeyInput').value = key; await detectModel(key); }
             else window.toggleSettings(true);
             updateUI();
@@ -126,45 +128,46 @@
             } catch(e) {}
         }
 
-        window.saveSettings = () => { localStorage.setItem('vFinal_key', document.getElementById('apiKeyInput').value.trim()); location.reload(); };
+        window.saveSettings = () => { localStorage.setItem('v5_stable_key', document.getElementById('apiKeyInput').value.trim()); location.reload(); };
 
-        // --- 核心優化：高效資料庫同步與斷句修正 ---
+        // --- 修正後的資料庫入庫與去重邏輯 ---
         function syncDatabase(rawText, grade) {
-            let addedCount = 0;
-            const dbMap = new Map(db.map(item => [item.word.toLowerCase().trim(), true]));
+            let count = 0;
+            // 建立既有單字 Set 索引
+            const wordSet = new Set(db.map(i => i.word.toLowerCase().trim()));
             
             rawText.split('\n').forEach(line => {
                 if (line.includes('|')) {
-                    let parts = line.split('|').map(s => s.trim());
-                    if (parts.length >= 3) {
-                        // 修正：不再用 Regex 刪除空格，僅轉小寫與去首尾空格
-                        let word = parts[0].toLowerCase();
-                        let translation = parts[1];
-                        let sentence = parts[2];
+                    let p = line.split('|').map(s => s.trim());
+                    if (p.length >= 3) {
+                        // 修正：僅對 keyword 去除雜訊，保留 sentence 的空格
+                        let kw = p[0].toLowerCase().trim(); 
+                        let trans = p[1];
+                        let sent = p[2];
 
-                        if (word.length > 1 && !dbMap.has(word)) {
-                            db.push({ id: Date.now() + Math.random(), word, trans: translation, sentence, grade });
-                            dbMap.set(word, true);
-                            addedCount++;
+                        if (kw.length > 1 && !wordSet.has(kw)) {
+                            db.push({ id: Date.now() + Math.random(), word: kw, trans, sentence: sent, grade });
+                            wordSet.add(kw);
+                            count++;
                         }
                     }
                 }
             });
-            localStorage.setItem('vFinal_db', JSON.stringify(db));
+            localStorage.setItem('final_v5_db', JSON.stringify(db));
             updateUI();
-            return addedCount;
+            return count;
         }
 
         window.handleManual = async () => {
-            const word = document.getElementById('manualInput').value.trim().toLowerCase();
-            if(!word || db.some(i => i.word === word)) return alert("無效或單字已存在。");
-            toggleLoader(true, "AI 正在造句...");
+            const w = document.getElementById('manualInput').value.trim().toLowerCase();
+            if(!w || db.some(i => i.word === w)) return alert("單字已存在或無效。");
+            toggleLoader(true, "AI 造句中...");
             try {
-                const key = localStorage.getItem('vFinal_key');
-                const aiRes = await callGemini(`Translate "${word}" and make a simple sentence for Grade 3. Format: Word | Translation | Sentence`, key);
+                const key = localStorage.getItem('v5_stable_key');
+                const aiRes = await callGemini(`OCR: "${w}". Format: word | trans | sentence. Grade 3 level.`, key);
                 syncDatabase(aiRes, gradeSelect.value);
                 document.getElementById('manualInput').value = "";
-            } catch (e) { alert("連線超時"); }
+            } catch (e) { alert("連線超時，請稍後。"); }
             finally { toggleLoader(false); }
         };
 
@@ -173,16 +176,16 @@
         window.handleAiUpload = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            toggleLoader(true, "AI 辨識中...");
+            toggleLoader(true, "AI 高速辨識中...");
             try {
                 const b64 = await compressImage(file);
-                const k = localStorage.getItem('vFinal_key');
-                // 指令優化，強迫 AI 回傳標準格式且不准刪除空格
-                const prompt = `Identify English words from image. Format: Word | Translation | Simple Sentence. Keep all spaces in sentences. No noise.`;
-                const aiRes = await callGemini(prompt, k, b64);
-                const count = syncDatabase(aiRes, gradeSelect.value);
-                alert(`入庫完成！新增了 ${count} 個獨特單字。`);
-            } catch (err) { alert("處理失敗 (Error 429)，請稍後再試。"); }
+                const k = localStorage.getItem('v5_stable_key');
+                // 強調：保持空格，嚴格輸出 Word | Trans | Sentence
+                const p = `Task: Identify English words. Output Format: Word | Translation | Simple Sentence. KEEP SPACES. No headers.`;
+                const aiRes = await callGemini(p, k, b64);
+                const added = syncDatabase(aiRes, gradeSelect.value);
+                alert(`入庫成功！新增了 ${added} 個新單字。`);
+            } catch (err) { alert("辨識失敗，請檢查 API 狀態 (Error 503/429)。"); }
             finally { toggleLoader(false); e.target.value = ''; }
         };
 
@@ -200,8 +203,9 @@
             document.getElementById('itemList').innerHTML = db.slice().reverse().map(item => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2 border border-slate-100">
                     <div onclick="window.speak('${item.word}')" class="flex-1 cursor-pointer">
-                        <div class="font-bold text-indigo-900">${item.word} <span class="text-[9px] bg-indigo-50 text-indigo-400 px-2 py-1 rounded ml-2">${item.grade}</span></div>
-                        <div class="text-[10px] text-slate-400">${item.trans}</div>
+                        <div class="font-bold text-indigo-900">${item.word} <span class="text-[9px] bg-slate-100 px-2 py-1 rounded ml-2">${item.grade}</span></div>
+                        <div class="text-[10px] text-slate-400 font-medium">${item.trans}</div>
+                        <div class="text-[10px] text-indigo-400 italic mt-1">${item.sentence}</div>
                     </div>
                     <button onclick="window.deleteItem(${item.id})" class="text-slate-200 p-2"><i class="fas fa-trash-alt"></i></button>
                 </div>
@@ -209,17 +213,17 @@
 
             document.getElementById('historyList').innerHTML = history.slice().reverse().map(h => `
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-slate-100 mb-2">
-                    <div><div class="font-mono text-[9px] text-indigo-400 font-bold">${h.code}</div><div class="font-black text-indigo-900">${h.score} 分</div></div>
-                    <div class="text-[9px] text-slate-300">${h.date}</div>
+                    <div><div class="font-mono text-[9px] text-indigo-400 font-bold">${h.code}</div><div class="font-black text-indigo-900 text-lg">${h.score} 分</div></div>
+                    <div class="text-[9px] text-slate-300 font-medium">${h.date}</div>
                 </div>
             `).join('');
         }
 
-        window.deleteItem = (id) => { if(confirm("刪除？")) { db = db.filter(i => i.id !== id); localStorage.setItem('vFinal_db', JSON.stringify(db)); updateUI(); } };
+        window.deleteItem = (id) => { if(confirm("刪除？")) { db = db.filter(i => i.id !== id); localStorage.setItem('final_v5_db', JSON.stringify(db)); updateUI(); } };
 
-        // --- 聽考邏輯 ---
+        // --- 聽考邏輯 (5-5-10) ---
         window.startExam = () => {
-            if (db.length < 5) return alert("題庫不足 5 題。");
+            if (db.length < 5) return alert("題庫單字不足（需至少 5 個）。");
             let shuffled = [...db].sort(() => 0.5 - Math.random());
             currentExamItems = [];
             for(let i=0; i<20; i++) currentExamItems.push(shuffled[i % shuffled.length]);
@@ -243,12 +247,12 @@
                     <div class="text-slate-300 text-xs font-bold uppercase tracking-widest italic">Listen and Spell</div>
                 </div>`;
             } else if (isChoice) {
-                if (!examOptionsState[currentIdx]) { examOptionsState[currentIdx] = generateQuizOptions(item.word); }
-                const options = examOptionsState[currentIdx];
+                if (!examOptionsState[currentIdx]) { examOptionsState[currentIdx] = generateExamOptions(item.word); }
+                const opts = examOptionsState[currentIdx];
                 bodyHtml = `<div class="flex-1 flex flex-col justify-center px-4">
                     <div class="text-indigo-900 font-bold text-2xl mb-10 leading-relaxed">${item.sentence.replace(new RegExp('\\b'+item.word+'\\b','gi'),'____')}</div>
                     <div class="grid grid-cols-1 gap-3">
-                        ${options.map((o, i) => {
+                        ${opts.map((o, i) => {
                             const isSelected = examUserAnswers[currentIdx] === o.toLowerCase();
                             return `<button onclick="window.handleChoice('${o}')" class="option-btn ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-50'} py-5 rounded-2xl font-black text-lg shadow-sm px-6">
                                 <span class="${isSelected ? 'text-indigo-200' : 'text-indigo-400'} mr-2">${i+1}.</span> ${o}
@@ -260,7 +264,7 @@
                 bodyHtml = `<div class="flex-1 flex flex-col justify-center">
                     <button onclick="window.speak('${item.sentence}')" class="w-24 h-24 bg-slate-800 text-white rounded-full mx-auto mb-6 shadow-xl active:scale-95"><i class="fas fa-volume-up text-3xl"></i></button>
                     <div class="text-indigo-900 font-bold text-2xl leading-relaxed mb-6 px-4 font-serif">${item.sentence.replace(new RegExp('\\b'+item.word+'\\b','gi'),'______')}</div>
-                    <div class="text-slate-300 text-xs font-bold uppercase tracking-widest italic italic">Listen and Fill</div>
+                    <div class="text-slate-300 text-xs font-bold italic uppercase">Listen and Fill the gap</div>
                 </div>`;
             }
 
@@ -275,7 +279,7 @@
                 </div>
                 <div class="flex justify-between mt-8 pt-4 border-t border-slate-50">
                     <button onclick="window.movePrev()" class="text-indigo-400 text-xs font-bold p-2 ${currentIdx === 0 ? 'invisible' : ''}"><i class="fas fa-chevron-left mr-1"></i>上題</button>
-                    ${currentIdx === 19 ? `<button onclick="window.finalizeExam()" class="bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95">提交評分</button>` 
+                    ${currentIdx === 19 ? `<button onclick="window.finalizeExam()" class="bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95">提交考卷</button>` 
                     : `<button onclick="window.moveNext()" class="text-indigo-400 text-xs font-bold p-2">下題<i class="fas fa-chevron-right ml-1"></i></button>`}
                 </div>
             `;
@@ -283,7 +287,7 @@
             window.speak(isVocab ? item.word : item.sentence);
         }
 
-        function generateQuizOptions(correct) {
+        function generateExamOptions(correct) {
             let o = [correct]; let p = db.filter(d => d.word.toLowerCase() !== correct.toLowerCase());
             while(o.length < 4 && p.length > 0) { let r = p.splice(Math.floor(Math.random()*p.length), 1)[0].word; if(!o.includes(r)) o.push(r); }
             while(o.length < 4) o.push("---");
@@ -296,37 +300,41 @@
         window.movePrev = () => { window.saveCurAns(); if(currentIdx > 0) { currentIdx--; renderExamCard(); } };
         window.moveNext = () => { window.saveCurAns(); if(currentIdx < 19) { currentIdx++; renderExamCard(); } else { window.finalizeExam(); } };
 
+        // --- 最終報表邏輯 (精確顯示項次) ---
         window.finalizeExam = () => {
             window.saveCurAns(); let score = 0;
             const summary = currentExamItems.map((q, i) => {
-                const correctWord = q.word.toLowerCase(); const userAns = examUserAnswers[i];
-                const isCorrect = userAns === correctWord; if(isCorrect) score += 5;
+                const correctWord = q.word.toLowerCase().trim(); 
+                const userAns = examUserAnswers[i].toLowerCase().trim();
+                const isCorrect = userAns === correctWord; 
+                if(isCorrect) score += 5;
                 
                 let dc = correctWord, du = userAns || "(未填)";
                 if (i >= 5 && i < 10) {
                     const opts = examOptionsState[i];
-                    const ci = opts.findIndex(o => o.toLowerCase() === correctWord) + 1;
-                    const ui = opts.findIndex(o => o.toLowerCase() === userAns) + 1;
-                    dc = `(${ci}) ${correctWord}`; du = ui > 0 ? `(${ui}) ${userAns}` : userAns;
+                    const ci = opts.findIndex(o => o.toLowerCase().trim() === correctWord) + 1;
+                    const ui = opts.findIndex(o => o.toLowerCase().trim() === userAns) + 1;
+                    dc = `(${ci}) ${correctWord}`; 
+                    du = ui > 0 ? `(${ui}) ${userAns}` : userAns;
                 }
-                return { type: i<5?'拼寫':(i<10?'選擇':'填空'), word: dc, user: du, isCorrect };
+                return { type: i<5?'單字':(i<10?'選擇':'填空'), word: dc, user: du, isCorrect };
             });
 
             const code = `${gradeSelect.value}_${new Date().toISOString().slice(0,10).replace(/-/g,'')}_${String(history.length+1).padStart(2,'0')}`;
             history.push({ code, score, date: new Date().toLocaleString(), results: summary });
-            localStorage.setItem('vFinal_history', JSON.stringify(history));
+            localStorage.setItem('history_v5', JSON.stringify(history));
 
             document.getElementById('resCode').innerText = "EXAM: " + code;
             document.getElementById('scoreDisplay').innerText = score;
             document.getElementById('resultSummary').innerHTML = summary.map((s, i) => `
-                <div class="bg-white p-4 rounded-2xl border ${s.isCorrect ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'} flex flex-col gap-1 mb-2">
+                <div class="report-card p-4 rounded-xl ${s.isCorrect ? 'report-correct' : 'report-wrong'} flex flex-col gap-1 mb-2">
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-[9px] font-black text-slate-300 uppercase tracking-tighter">${i+1}. ${s.type}題</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase">${i+1}. ${s.type}題</span>
                         <i class="fas ${s.isCorrect ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'}"></i>
                     </div>
                     <div class="flex flex-col text-xs">
-                        <div class="flex justify-between"><span class="text-slate-400 font-bold">正確答案</span><span class="text-indigo-700 font-black">${s.word}</span></div>
-                        <div class="flex justify-between border-t border-slate-100 pt-1 mt-1"><span class="text-slate-400 font-bold">你的答案</span><span class="${s.isCorrect?'text-green-600':'text-red-600'} font-black">${s.user}</span></div>
+                        <div class="flex justify-between mb-1"><span class="text-slate-400 font-bold">正確答案</span><span class="text-indigo-700 font-black">${s.word}</span></div>
+                        <div class="flex justify-between border-t border-slate-100 pt-1"><span class="text-slate-400 font-bold">考生答案</span><span class="${s.isCorrect?'text-green-600':'text-red-600'} font-black">${s.user}</span></div>
                     </div>
                 </div>
             `).join('');
@@ -336,13 +344,14 @@
         window.speak = (t) => {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(t);
-            u.lang = 'en-US'; u.rate = 0.6; // 0.6x 慢速
+            u.lang = 'en-US'; u.rate = 0.6; // 語速 0.6
             window.speechSynthesis.speak(u);
         };
 
         function toggleLoader(s, t="") {
             document.getElementById('idleUI').classList.toggle('hidden', s);
             document.getElementById('loadingUI').classList.toggle('hidden', !s);
+            const p = document.querySelector('#loadingUI p'); if(p && t) p.innerText = t;
         }
 
         function compressImage(file) {
@@ -372,7 +381,7 @@
             if(document.getElementById(activeTab)) document.getElementById(activeTab).className = "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow text-indigo-600";
         };
 
-        window.fullReset = () => { if(confirm("清除？")) { localStorage.clear(); location.reload(); } };
+        window.fullReset = () => { if(confirm("確定全部清除？")) { localStorage.clear(); location.reload(); } };
         window.toggleSettings = () => document.getElementById('settingsSection').classList.toggle('hidden');
         window.exportData = () => {
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type:'application/json'}));
