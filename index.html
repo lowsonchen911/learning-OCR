@@ -24,10 +24,10 @@
         <div class="flex justify-between items-center max-w-2xl mx-auto">
             <div>
                 <h1 class="text-2xl font-black italic flex items-center">
-                    <i class="fas fa-rocket mr-2 text-yellow-300"></i>AI 助手
+                    <i class="fas fa-graduation-cap mr-2 text-yellow-300"></i>AI 助手
                 </h1>
                 <p id="versionTag" class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">
-                    Version: 2026.04.24-09 (Auto-Model Fix)
+                    Version: 2026.04.24-10 (Stable Logic)
                 </p>
             </div>
             <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-all">
@@ -37,23 +37,17 @@
     </header>
 
     <main class="p-4 max-w-2xl mx-auto">
-        
         <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold flex items-center"><i class="fas fa-key mr-2 text-yellow-400"></i>我的 API 設定</h3>
-                <button onclick="window.toggleSettings(false)" class="text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+                <h3 class="font-bold flex items-center"><i class="fas fa-key mr-2 text-yellow-400"></i> API 設定</h3>
+                <button onclick="window.toggleSettings(false)" class="text-slate-400"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] text-slate-400 uppercase font-bold">Google AI Studio API Key</label>
-                    <input type="password" id="apiKeyInput" placeholder="在此貼上 AIza... 開頭的 Key" 
-                           class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mt-1 focus:ring-2 focus:ring-yellow-400 transition-all text-white">
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="window.saveSettings()" class="flex-1 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all">儲存設定</button>
-                    <button onclick="window.exportData()" class="px-4 bg-slate-600 rounded-xl hover:bg-slate-500" title="導出備份"><i class="fas fa-download"></i></button>
-                    <button onclick="window.importData()" class="px-4 bg-slate-600 rounded-xl hover:bg-slate-500" title="匯入還原"><i class="fas fa-upload"></i></button>
-                </div>
+            <input type="password" id="apiKeyInput" placeholder="在此貼上 AIza... 開頭的 Key" 
+                   class="w-full bg-slate-700 border-none rounded-xl p-4 text-sm mt-1 mb-4 focus:ring-2 focus:ring-yellow-400 outline-none text-white">
+            <div class="flex gap-2">
+                <button onclick="window.saveSettings()" class="flex-1 bg-yellow-500 text-slate-900 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all">儲存 Key</button>
+                <button onclick="window.exportData()" class="px-4 bg-slate-600 rounded-xl"><i class="fas fa-download"></i></button>
+                <button onclick="window.importData()" class="px-4 bg-slate-600 rounded-xl"><i class="fas fa-upload"></i></button>
             </div>
         </section>
 
@@ -63,17 +57,17 @@
                     <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-camera text-3xl"></i>
                     </div>
-                    <h2 class="font-bold text-slate-700 text-lg mb-6">掃瞄課本或考卷</h2>
+                    <h2 class="font-bold text-slate-700 text-lg mb-6">掃瞄考卷單字</h2>
                     <input type="file" id="cameraInput" accept="image/*" class="hidden" onchange="window.handleAiUpload(event)">
-                    <button onclick="window.checkKeyBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg mt-4 active:scale-95 transition-all">
-                        <i class="fas fa-expand mr-2 text-yellow-300"></i> 開始 AI 辨識
+                    <button onclick="window.checkKeyBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">
+                        <i class="fas fa-magic mr-2 text-yellow-300"></i> 拍照自動加入題庫
                     </button>
                 </div>
 
                 <div id="loadingUI" class="hidden py-10">
                     <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-600 mb-4"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse">正在嘗試多種 AI 路徑...</p>
-                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 font-mono italic text-center italic font-bold">偵測模型中...</p>
+                    <p class="text-indigo-600 font-bold animate-pulse">Gemini 1.5 Flash 正在處理...</p>
+                    <p id="debugStatus" class="text-[10px] text-slate-400 mt-2 italic font-bold tracking-wider uppercase">Connecting...</p>
                 </div>
             </div>
         </section>
@@ -84,7 +78,7 @@
         </div>
 
         <section id="listPage">
-            <div id="emptyTip" class="text-center py-20 text-slate-300 hidden font-bold">目前題庫是空的喔！</div>
+            <div id="emptyTip" class="text-center py-20 text-slate-300 hidden font-bold">還沒加入單字喔！快去拍照。</div>
             <div id="itemList" class="space-y-3"></div>
         </section>
 
@@ -94,12 +88,8 @@
     </main>
 
     <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-lg border-t flex justify-around p-5 shadow-lg z-40">
-        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600">
-            <i class="fas fa-home text-xl"></i><span class="text-[10px] mt-1 font-bold">主頁</span>
-        </button>
-        <button onclick="window.startQuiz()" class="flex flex-col items-center text-slate-400">
-            <i class="fas fa-graduation-cap text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span>
-        </button>
+        <button onclick="window.switchTab('list')" class="flex flex-col items-center text-indigo-600"><i class="fas fa-home text-xl"></i><span class="text-[10px] mt-1 font-bold">主頁</span></button>
+        <button onclick="window.startQuiz()" class="flex flex-col items-center text-slate-400"><i class="fas fa-edit text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span></button>
     </nav>
 
     <script type="module">
@@ -145,38 +135,28 @@
             toggleLoading(true);
             const status = document.getElementById('debugStatus');
 
-            // 解決 404 的嘗試機制
-            const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash"];
-            let success = false;
-
             try {
                 const base64 = await toBase64(file);
                 const genAI = new GoogleGenerativeAI(apiKey);
                 
-                for (let modelId of modelsToTry) {
-                    try {
-                        status.innerText = `Trying model: ${modelId}...`;
-                        const model = genAI.getGenerativeModel({ model: modelId });
-                        const prompt = "這是一張國小英文考卷。請辨識英文單字與句子並翻譯。格式：英文 | 翻譯";
-                        
-                        const result = await model.generateContent([
-                            prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
-                        ]);
+                // 鎖定單一最穩定模型，避免多次嘗試燒掉配額
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                status.innerText = "Requesting Gemini 1.5 Flash...";
 
-                        processResponse(result.response.text());
-                        success = true;
-                        console.log("Connected via:", modelId);
-                        break; 
-                    } catch (mErr) {
-                        console.warn(`${modelId} failed:`, mErr.message);
-                    }
-                }
+                const prompt = "這是一張國小英文考卷。請辨識英文單字與句子並翻譯。格式：英文 | 翻譯";
+                const result = await model.generateContent([
+                    prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }
+                ]);
 
-                if (success) alert("辨識成功！題目已加入。");
-                else alert("所有 AI 模型連線失敗。請確認您的 API Key 已開啟 Generative Language API 權限。");
-
+                processResponse(result.response.text());
+                alert("辨識成功！題目已加入。");
             } catch (err) {
-                alert("執行錯誤: " + err.message);
+                console.error("Full AI Error:", err);
+                if (err.message.includes("429")) {
+                    alert("【配額錯誤】Google 免費版限制每分鐘只能掃描 2 次。請等待一分鐘後再試一次！");
+                } else {
+                    alert("執行錯誤: " + err.message);
+                }
             } finally {
                 toggleLoading(false);
                 e.target.value = '';
@@ -240,7 +220,7 @@
         };
 
         window.startQuiz = () => {
-            if (db.length === 0) return alert("題庫目前沒有單字。");
+            if (db.length === 0) return alert("題庫沒東西。");
             currentIdx = 0; window.switchTab('quiz'); renderQuiz();
         };
 
@@ -265,7 +245,7 @@
             if (user === correct) {
                 currentIdx++;
                 if (currentIdx < db.length) renderQuiz();
-                else { alert("🎉 考完囉！"); window.switchTab('list'); }
+                else { alert("🎉 全部完成！"); window.switchTab('list'); }
             } else {
                 alert(`正確答案是：${db[currentIdx].word}`);
                 window.speak(db[currentIdx].word);
@@ -298,7 +278,7 @@
             const i = document.createElement('input'); i.type = 'file'; i.accept = '.json';
             i.onchange = e => {
                 const reader = new FileReader();
-                reader.onload = ev => { try { db = JSON.parse(ev.target.result); window.saveDB(); alert("還原成功！"); } catch(e) { alert("讀取失敗。"); } };
+                reader.onload = ev => { try { db = JSON.parse(ev.target.result); window.saveDB(); alert("還原成功！"); } catch(e) { alert("失敗。"); } };
                 reader.readAsText(e.target.files[0]);
             };
             i.click();
