@@ -2,209 +2,122 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 英文助手 v21</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini API 診斷工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script type="importmap">{ "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }</script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: #f1f5f9; -webkit-tap-highlight-color: transparent; }
-        .loading-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .btn-disabled { opacity: 0.3 !important; cursor: not-allowed !important; filter: grayscale(1); pointer-events: none; }
-    </style>
+    <script type="importmap">
+      { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
+    </script>
 </head>
-<body class="pb-28">
-
-    <header class="bg-indigo-900 text-white p-6 shadow-xl sticky top-0 z-30 rounded-b-[2rem]">
-        <div class="flex justify-between items-center max-w-2xl mx-auto">
-            <div>
-                <h1 class="text-xl font-black italic flex items-center">
-                    <i class="fas fa-microchip mr-2 text-yellow-300"></i>AI 英文助手
-                </h1>
-                <p class="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">Version: 2026.04.24-21 (Light-Vision)</p>
-            </div>
-            <button onclick="window.toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full"><i class="fas fa-cog text-yellow-300"></i></button>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+        <h1 class="text-xl font-bold mb-4">Gemini API 核心診斷</h1>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-bold mb-2">1. 輸入 API Key</label>
+            <input type="password" id="keyIn" class="w-full border p-3 rounded" placeholder="AIza...">
         </div>
-    </header>
 
-    <main class="p-4 max-w-2xl mx-auto">
-        <section id="settingsSection" class="hidden mb-6 bg-slate-800 text-white rounded-3xl p-6 shadow-2xl">
-            <h3 class="font-bold flex items-center text-indigo-300 mb-4"><i class="fas fa-tools mr-2"></i> 設定管理</h3>
-            <input type="password" id="apiKeyInput" placeholder="在此輸入 AIza... 金鑰" class="w-full bg-slate-700 rounded-xl p-3 text-sm mt-1 outline-none text-white border border-slate-600">
-            <div class="grid grid-cols-2 gap-2 mt-4">
-                <button onclick="window.saveSettings()" class="col-span-2 bg-indigo-600 py-3 rounded-xl font-bold">儲存設定</button>
-                <button onclick="window.fullHardReset()" class="bg-red-500/20 text-red-400 py-2 rounded-xl text-[10px] border border-red-500/30">重置計時器</button>
-                <button onclick="window.exportData()" class="bg-slate-700 py-2 rounded-xl text-[10px] border border-slate-600">備份資料</button>
+        <div class="mb-6">
+            <label class="block text-sm font-bold mb-2">2. 選擇測試模型 (2026 建議清單)</label>
+            <select id="modelSelect" class="w-full border p-3 rounded bg-gray-50">
+                <option value="gemini-1.5-flash">gemini-1.5-flash (標準版)</option>
+                <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest (最新預覽)</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash (2026 高速版)</option>
+                <option value="gemini-1.5-pro">gemini-1.5-pro (最強但最慢)</option>
+            </select>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-bold mb-2">3. 選擇一張照片</label>
+            <input type="file" id="fileIn" accept="image/*" class="w-full">
+        </div>
+
+        <button onclick="runTest()" id="runBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95">
+            執行核心診斷
+        </button>
+
+        <div class="mt-8">
+            <h2 class="font-bold text-gray-500 mb-2">診斷日誌：</h2>
+            <div id="log" class="bg-black text-green-400 p-4 rounded text-xs h-64 overflow-y-auto font-mono">
+                等待開始...
             </div>
-        </section>
-
-        <section id="aiSection" class="mb-6">
-            <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-indigo-50 text-center">
-                <div id="idleUI">
-                    <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-camera text-2xl"></i>
-                    </div>
-                    <h2 class="font-bold text-slate-700 text-lg mb-6">辨識考卷單字</h2>
-                    <input type="file" id="cameraInput" accept="image/*" class="hidden">
-                    <button id="mainScanBtn" onclick="window.checkBeforeUpload()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg transition-all">
-                        <i class="fas fa-expand mr-2 text-yellow-300"></i> <span id="btnText">拍照匯入 (極簡模式)</span>
-                    </button>
-                    <p id="quotaTip" class="text-[10px] text-red-500 mt-3 hidden italic font-bold">API 正受保護中，請等待倒數...</p>
-                </div>
-
-                <div id="loadingUI" class="hidden py-10">
-                    <i class="fas fa-circle-notch loading-spin text-4xl text-indigo-600 mb-4"></i>
-                    <p class="text-indigo-600 font-bold animate-pulse">正在微縮圖片並連線...</p>
-                </div>
-            </div>
-        </section>
-
-        <div id="itemList" class="space-y-3"></div>
-    </main>
-
-    <nav class="fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-slate-100 flex justify-around p-5 shadow-lg z-40">
-        <button onclick="location.reload()" class="flex flex-col items-center text-indigo-600"><i class="fas fa-sync-alt text-xl"></i><span class="text-[10px] mt-1 font-bold">重整</span></button>
-        <button onclick="window.startQuiz()" class="flex flex-col items-center text-slate-300"><i class="fas fa-play text-xl"></i><span class="text-[10px] mt-1 font-bold">測驗</span></button>
-    </nav>
+        </div>
+    </div>
 
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        let db = JSON.parse(localStorage.getItem('studyDB_final')) || [];
-        let lastRequestTimestamp = parseInt(localStorage.getItem('last_api_request_time')) || 0;
+        function log(msg, color = "text-green-400") {
+            const div = document.getElementById('log');
+            const span = document.createElement('div');
+            span.className = color;
+            span.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            div.appendChild(span);
+            div.scrollTop = div.scrollHeight;
+        }
 
-        // --- 強制微縮圖片：解決 TPM (流量) 溢出 ---
-        const compressToMicro = (file, maxWidth) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (ev) => {
-                    const img = new Image();
-                    img.src = ev.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const scale = maxWidth / img.width;
-                        canvas.width = maxWidth;
-                        canvas.height = img.height * scale;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.5)); // 畫質降到 0.5，辨識單字足矣
-                    };
-                };
-            });
-        };
+        window.runTest = async () => {
+            const key = document.getElementById('keyIn').value.trim();
+            const modelId = document.getElementById('modelSelect').value;
+            const file = document.getElementById('fileIn').files[0];
 
-        window.onload = () => {
-            const savedKey = localStorage.getItem('user_gemini_key');
-            if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
-            updateUI();
-            checkAndResumeCooldown();
-            document.getElementById('cameraInput').addEventListener('change', window.handleAiUpload);
-        };
+            if (!key || !file) return alert("請填寫 Key 並選擇照片！");
 
-        window.checkBeforeUpload = () => {
-            if (Date.now() - lastRequestTimestamp < 45000) return alert("冷卻中！請等待倒數結束。");
-            document.getElementById('cameraInput').click();
-        };
-
-        window.handleAiUpload = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            document.getElementById('idleUI').classList.add('hidden');
-            document.getElementById('loadingUI').classList.remove('hidden');
-
-            const apiKey = localStorage.getItem('user_gemini_key');
-            const genAI = new GoogleGenerativeAI(apiKey);
-            
-            // 鎖定 1.5-flash-8b：配額最鬆，429 機率最低
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
+            document.getElementById('runBtn').disabled = true;
+            document.getElementById('log').innerHTML = "";
+            log(`啟動診斷，使用模型: ${modelId}...`);
 
             try {
-                // 微縮圖片到 640px，極大降低 Token 流量
-                const compressed = await compressToMicro(file, 640);
+                // 1. 初始化 SDK
+                const genAI = new GoogleGenerativeAI(key);
                 
+                // 2. 獲取模型
+                log("正在初始化 GenerativeModel...");
+                const model = genAI.getGenerativeModel({ model: modelId });
+
+                // 3. 讀取圖片
+                log("正在讀取圖片檔案...");
+                const base64Data = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                });
+                log("圖片讀取成功。");
+
+                // 4. 發送請求
+                log("正在連線 Google AI 伺服器 (這可能需要 5-10 秒)...");
                 const result = await model.generateContent([
-                    "辨識單字。格式：英文 | 翻譯",
-                    { inlineData: { data: compressed.split(',')[1], mimeType: "image/jpeg" } }
+                    "Identify only the text in this image.",
+                    { inlineData: { data: base64Data, mimeType: file.type } }
                 ]);
 
-                processResponse(result.response.text());
-                alert("辨識成功！");
-                lastRequestTimestamp = Date.now();
-                localStorage.setItem('last_api_request_time', lastRequestTimestamp);
-                startCooldown(45);
+                // 5. 輸出結果
+                log("--- [ 成功獲得回應 ] ---", "text-yellow-400");
+                const response = await result.response;
+                const text = response.text();
+                log("回應內容：\n" + text, "text-white");
+
             } catch (err) {
-                console.error(err);
-                alert("API 拒絕連線。原因：" + err.message);
+                log("--- [ 發生錯誤 ] ---", "text-red-500");
+                log(`Error Name: ${err.name}`, "text-red-400");
+                log(`Error Message: ${err.message}`, "text-red-400");
+                
+                // 深度解析 429 或是 404
+                if (err.message.includes("429")) {
+                    log("診斷結論：配額溢出 (429)。你的 Key 被 Google 暫時限制流量了。", "text-red-300");
+                } else if (err.message.includes("404")) {
+                    log("診斷結論：模型找不到 (404)。該模型 ID 可能不支援當前的 API 版本，或該 Key 無權使用此模型。", "text-red-300");
+                } else if (err.message.includes("API key not valid")) {
+                    log("診斷結論：金鑰無效。請重新確認 Key 字串是否正確。", "text-red-300");
+                }
+                
+                console.error("Full Error Object:", err);
             } finally {
-                document.getElementById('idleUI').classList.remove('hidden');
-                document.getElementById('loadingUI').classList.add('hidden');
-                e.target.value = '';
+                document.getElementById('runBtn').disabled = false;
+                log("測試結束。");
             }
         };
-
-        function startCooldown(duration) {
-            const btn = document.getElementById('mainScanBtn');
-            const txt = document.getElementById('btnText');
-            const tip = document.getElementById('quotaTip');
-            btn.classList.add('btn-disabled');
-            tip.classList.remove('hidden');
-            let sec = duration;
-            const timer = setInterval(() => {
-                txt.innerText = `鎖定中 (${sec--}s)`;
-                if (sec < 0) {
-                    clearInterval(timer);
-                    btn.classList.remove('btn-disabled');
-                    tip.classList.add('hidden');
-                    txt.innerText = "開始拍照匯入 (極簡模式)";
-                }
-            }, 1000);
-        }
-
-        function processResponse(text) {
-            text.split('\n').forEach(line => {
-                if (line.includes('|')) {
-                    let [word, trans] = line.split('|').map(s => s.trim());
-                    word = word.replace(/^[0-9]+[\.\s]*/, '').replace(/^\(\s*\)/, '');
-                    if (word && trans) db.push({ id: Date.now() + Math.random(), word, trans });
-                }
-            });
-            localStorage.setItem('studyDB_final', JSON.stringify(db));
-            updateUI();
-        }
-
-        function updateUI() {
-            const list = document.getElementById('itemList');
-            list.innerHTML = db.map(item => `
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center mb-2">
-                    <div>
-                        <div class="font-bold text-indigo-900">${item.word}</div>
-                        <div class="text-[10px] text-slate-400">${item.trans}</div>
-                    </div>
-                    <button onclick="window.deleteItem(${item.id})" class="text-slate-300 p-2"><i class="fas fa-trash"></i></button>
-                </div>
-            `).reverse().join('');
-        }
-
-        window.deleteItem = (id) => {
-            if(confirm("刪除？")) { db = db.filter(i => i.id !== id); localStorage.setItem('studyDB_final', JSON.stringify(db)); updateUI(); }
-        };
-
-        window.saveSettings = () => {
-            localStorage.setItem('user_gemini_key', document.getElementById('apiKeyInput').value.trim());
-            alert("已儲存。");
-            document.getElementById('settingsSection').classList.add('hidden');
-        };
-
-        window.fullHardReset = () => { localStorage.setItem('last_api_request_time', 0); location.reload(); };
-        window.toggleSettings = () => document.getElementById('settingsSection').classList.toggle('hidden');
-        function checkAndResumeCooldown() {
-            const diff = Date.now() - lastRequestTimestamp;
-            if (diff < 45000) startCooldown(Math.ceil((45000 - diff) / 1000));
-        }
     </script>
 </body>
 </html>
